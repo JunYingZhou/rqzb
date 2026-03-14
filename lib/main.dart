@@ -179,6 +179,7 @@ class RecordPage extends StatelessWidget {
                 child: _RecordTile(
                   name: "张小兰",
                   category: "婚礼",
+                  relationship: "朋友",
                   date: "2026-03-14",
                   amount: index.isEven ? 500 : -300,
                 ),
@@ -290,12 +291,14 @@ class _RecordTile extends StatelessWidget {
   const _RecordTile({
     required this.name,
     required this.category,
+    required this.relationship,
     required this.date,
     required this.amount,
   });
 
   final String name;
   final String category;
+  final String relationship;
   final String date;
   final int amount;
 
@@ -314,7 +317,7 @@ class _RecordTile extends StatelessWidget {
           name,
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        subtitle: Text("$category · $date"),
+        subtitle: Text("$relationship · $category · $date"),
         trailing: Text(
           amountText,
           style: Theme.of(context)
@@ -531,16 +534,39 @@ class _AddRecordPageState extends State<AddRecordPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _occasionController = TextEditingController();
+  final _relationshipController = TextEditingController();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
 
   String _type = "收礼";
+  String _relationship = "朋友";
   DateTime _date = DateTime(2026, 3, 15);
+
+  static const _relationshipOptions = [
+    "家人",
+    "亲戚",
+    "朋友",
+    "同事",
+    "同学",
+    "邻里",
+    "其他",
+  ];
+
+  static const _occasionOptions = [
+    "婚礼",
+    "满月",
+    "乔迁",
+    "寿宴",
+    "升学",
+    "开业",
+    "白事",
+  ];
 
   @override
   void dispose() {
     _nameController.dispose();
     _occasionController.dispose();
+    _relationshipController.dispose();
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -614,6 +640,70 @@ class _AddRecordPageState extends State<AddRecordPage> {
                   },
                 ),
                 const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _relationship,
+                  decoration: const InputDecoration(
+                    labelText: "关系",
+                  ),
+                  items: _relationshipOptions
+                      .map(
+                        (option) => DropdownMenuItem(
+                          value: option,
+                          child: Text(option),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) {
+                    if (value == null) return;
+                    setState(() => _relationship = value);
+                    if (value != "其他") {
+                      _relationshipController.clear();
+                    }
+                  },
+                ),
+                if (_relationship == "其他") ...[
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _relationshipController,
+                    decoration: const InputDecoration(
+                      labelText: "关系补充",
+                      hintText: "例如：客户 / 伙伴",
+                    ),
+                    textInputAction: TextInputAction.next,
+                    validator: (value) {
+                      if (_relationship == "其他" &&
+                          (value == null || value.trim().isEmpty)) {
+                        return "请输入关系补充";
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Text(
+                  "常用场合",
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 10),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: _occasionOptions
+                      .map(
+                        (option) => ChoiceChip(
+                          label: Text(option),
+                          selected: _occasionController.text == option,
+                          onSelected: (selected) {
+                            setState(() {
+                              _occasionController.text =
+                                  selected ? option : "";
+                            });
+                          },
+                        ),
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: 12),
                 TextFormField(
                   controller: _occasionController,
                   decoration: const InputDecoration(
