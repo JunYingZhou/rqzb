@@ -1,4 +1,4 @@
-import "package:flutter/material.dart";
+﻿import "package:flutter/material.dart";
 
 void main() {
   runApp(const RenqingLedgerApp());
@@ -147,7 +147,13 @@ class RecordPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   _QuickActions(
-                    onAdd: () {},
+                    onAdd: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AddRecordPage(),
+                        ),
+                      );
+                    },
                     onImport: () {},
                     onExport: () {},
                   ),
@@ -508,6 +514,180 @@ class _StatTable extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class AddRecordPage extends StatefulWidget {
+  const AddRecordPage({super.key});
+
+  @override
+  State<AddRecordPage> createState() => _AddRecordPageState();
+}
+
+class _AddRecordPageState extends State<AddRecordPage> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _occasionController = TextEditingController();
+  final _amountController = TextEditingController();
+  final _noteController = TextEditingController();
+
+  String _type = "收礼";
+  DateTime _date = DateTime(2026, 3, 15);
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _occasionController.dispose();
+    _amountController.dispose();
+    _noteController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _date,
+      firstDate: DateTime(2010),
+      lastDate: DateTime(2100),
+    );
+
+    if (picked != null) {
+      setState(() => _date = picked);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("新增记录"),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (_formKey.currentState?.validate() ?? false) {
+                Navigator.of(context).pop();
+              }
+            },
+            child: const Text("保存"),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "记录类型",
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 10),
+                SegmentedButton<String>(
+                  segments: const [
+                    ButtonSegment(value: "收礼", label: Text("收礼")),
+                    ButtonSegment(value: "随礼", label: Text("随礼")),
+                  ],
+                  selected: {_type},
+                  onSelectionChanged: (value) {
+                    setState(() => _type = value.first);
+                  },
+                ),
+                const SizedBox(height: 20),
+                TextFormField(
+                  controller: _nameController,
+                  decoration: const InputDecoration(
+                    labelText: "对象姓名",
+                    hintText: "例如：张小兰",
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "请输入姓名";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _occasionController,
+                  decoration: const InputDecoration(
+                    labelText: "场合",
+                    hintText: "例如：婚礼 / 满月",
+                  ),
+                  textInputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "请输入场合";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _amountController,
+                  decoration: const InputDecoration(
+                    labelText: "金额",
+                    hintText: "例如：500",
+                  ),
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "请输入金额";
+                    }
+                    final amount = int.tryParse(value.trim());
+                    if (amount == null || amount <= 0) {
+                      return "金额需要是正整数";
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: _pickDate,
+                  borderRadius: BorderRadius.circular(16),
+                  child: InputDecorator(
+                    decoration: const InputDecoration(
+                      labelText: "日期",
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today, size: 18),
+                        const SizedBox(width: 8),
+                        Text(
+                          "${_date.year}-${_date.month.toString().padLeft(2, "0")}-${_date.day.toString().padLeft(2, "0")}",
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _noteController,
+                  decoration: const InputDecoration(
+                    labelText: "备注",
+                    hintText: "可选",
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 24),
+                FilledButton(
+                  onPressed: () {
+                    if (_formKey.currentState?.validate() ?? false) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: const Text("保存记录"),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
