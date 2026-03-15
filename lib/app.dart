@@ -111,8 +111,9 @@ class RenqingLedgerApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     const brand = Color(0xFFD31145);
-    final themeMode = ref.watch(appThemeModeProvider);
-    final fontScale = fontScaleFor(ref.watch(appFontSizeProvider));
+    final settings = ref.watch(appSettingsProvider);
+    final themeMode = settings.themeMode;
+    final fontScale = fontScaleFor(settings.fontSize);
 
     return MaterialApp(
       title: "人情账本",
@@ -134,4 +135,3 @@ class RenqingLedgerApp extends ConsumerWidget {
     );
   }
 }
-

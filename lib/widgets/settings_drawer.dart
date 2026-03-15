@@ -5,26 +5,11 @@ import "../state/app_settings.dart";
 class SettingsDrawer extends ConsumerWidget {
   const SettingsDrawer({super.key});
 
-  void _toggleTheme(WidgetRef ref) {
-    final current = ref.read(appThemeModeProvider);
-    ref.read(appThemeModeProvider.notifier).state =
-        current == AppThemeMode.light ? AppThemeMode.dark : AppThemeMode.light;
-  }
-
-  void _toggleFontSize(WidgetRef ref) {
-    final current = ref.read(appFontSizeProvider);
-    final next = switch (current) {
-      AppFontSize.small => AppFontSize.medium,
-      AppFontSize.medium => AppFontSize.large,
-      AppFontSize.large => AppFontSize.small,
-    };
-    ref.read(appFontSizeProvider.notifier).state = next;
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final themeMode = ref.watch(appThemeModeProvider);
-    final fontSize = ref.watch(appFontSizeProvider);
+    final settings = ref.watch(appSettingsProvider);
+    final themeMode = settings.themeMode;
+    final fontSize = settings.fontSize;
 
     final themeLabel = themeMode == AppThemeMode.light ? "明色" : "暗色";
     final fontLabel = labelForFontSize(fontSize);
@@ -59,14 +44,16 @@ class SettingsDrawer extends ConsumerWidget {
                 title: "主题色",
                 description: "点击切换明暗模式",
                 value: themeLabel,
-                onPressed: () => _toggleTheme(ref),
+                onPressed: () =>
+                    ref.read(appSettingsProvider.notifier).toggleTheme(),
               ),
               const SizedBox(height: 12),
               _SettingTile(
                 title: "字体大小",
                 description: "点击循环切换大小",
                 value: fontLabel,
-                onPressed: () => _toggleFontSize(ref),
+                onPressed: () =>
+                    ref.read(appSettingsProvider.notifier).cycleFontSize(),
               ),
               const SizedBox(height: 20),
               Text(
@@ -139,4 +126,3 @@ class _SettingTile extends StatelessWidget {
     );
   }
 }
-
