@@ -1,5 +1,5 @@
-2026/03/15-18:45:49.597 301c Log #3: 5 ops saved to Table #4 OK
-2026/03/15-18:45:49.600 301c Archiving C:\Users\34975\AppData\Local\Temp\flutter_tools.f145118d\flutter_tools_chrome_device.8b94ca82\Default\Site Characteristics Database/000003.log: OK
-2026/03/15-18:45:49.600 301c Table #4: 5 entries OK
-2026/03/15-18:45:49.609 301c Archiving C:\Users\34975\AppData\Local\Temp\flutter_tools.f145118d\flutter_tools_chrome_device.8b94ca82\Default\Site Characteristics Database/MANIFEST-000001: OK
-2026/03/15-18:45:49.627 301c **** Repaired leveldb C:\Users\34975\AppData\Local\Temp\flutter_tools.f145118d\flutter_tools_chrome_device.8b94ca82\Default\Site Characteristics Database; recovered 1 files; 247 bytes. Some data may have been lost. ****
+2026/03/15-18:53:09.128 6660 Log #3: 5 ops saved to Table #4 OK
+2026/03/15-18:53:09.129 6660 Archiving C:\Users\34975\AppData\Local\Temp\flutter_tools.3b6e714b\flutter_tools_chrome_device.32462423\Default\Site Characteristics Database/000003.log: OK
+2026/03/15-18:53:09.129 6660 Table #4: 5 entries OK
+2026/03/15-18:53:09.130 6660 Archiving C:\Users\34975\AppData\Local\Temp\flutter_tools.3b6e714b\flutter_tools_chrome_device.32462423\Default\Site Characteristics Database/MANIFEST-000001: OK
+2026/03/15-18:53:09.140 6660 **** Repaired leveldb C:\Users\34975\AppData\Local\Temp\flutter_tools.3b6e714b\flutter_tools_chrome_device.32462423\Default\Site Characteristics Database; recovered 1 files; 247 bytes. Some data may have been lost. ****
