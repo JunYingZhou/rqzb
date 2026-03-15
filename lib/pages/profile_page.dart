@@ -13,7 +13,7 @@ class ProfilePage extends StatelessWidget {
           slivers: [
             SliverAppBar(
               pinned: true,
-              title: const Text("鎴戠殑"),
+              title: const Text("我的"),
             ),
             SliverToBoxAdapter(
               child: Padding(
@@ -25,7 +25,7 @@ class ProfilePage extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
                 child: Text(
-                  "瀛ｅ害缁熻",
+                  "季度统计",
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -52,7 +52,7 @@ class ProfilePage extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
                 child: Text(
-                  "骞村害缁熻",
+                  "年度统计",
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -136,7 +136,7 @@ class _ProfileHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "寮犲皬鍏?",
+                      "张小六?",
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -144,12 +144,12 @@ class _ProfileHeader extends StatelessWidget {
                     const SizedBox(height: 8),
                     _InfoRow(
                       icon: Icons.phone,
-                      text: "甯哥敤鎵嬫満鍙凤細138****8821",
+                      text: "常用手机号：138****8821",
                     ),
                     const SizedBox(height: 6),
                     _InfoRow(
                       icon: Icons.location_on,
-                      text: "褰撳墠浣嶇疆锛氫笂娴?",
+                      text: "当前位置：上海?",
                     ),
                   ],
                 ),
@@ -162,7 +162,7 @@ class _ProfileHeader extends StatelessWidget {
                 child: IconButton(
                   onPressed: () {},
                   icon: const Icon(Icons.edit),
-                  tooltip: "缂栬緫璧勬枡",
+                  tooltip: "编辑资料",
                   style: IconButton.styleFrom(
                     padding: const EdgeInsets.all(12),
                   ),
@@ -237,11 +237,11 @@ class _QuarterChart extends StatelessWidget {
             _ChartLegend(
               items: const [
                 _LegendItem(
-                  label: "閺€鍓併仠",
+                  label: "收入",
                   color: Color(0xFF198754),
                 ),
                 _LegendItem(
-                  label: "闂呭繒銇?",
+                  label: "支出",
                   color: Color(0xFFB02A37),
                 ),
               ],
@@ -312,7 +312,7 @@ class _YearChart extends StatelessWidget {
             _ChartLegend(
               items: const [
                 _LegendItem(
-                  label: "缂佹挷缍?",
+                  label: "结余",
                   color: Color(0xFF1B0A0F),
                 ),
               ],
@@ -597,7 +597,7 @@ class _StatTable extends StatelessWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      "鍛ㄦ湡",
+                      "周期",
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF6B5A60),
@@ -607,7 +607,7 @@ class _StatTable extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      "鏀剁ぜ",
+                      "收礼",
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF6B5A60),
@@ -617,7 +617,7 @@ class _StatTable extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      "闅忕ぜ",
+                      "随礼",
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF6B5A60),
@@ -627,7 +627,7 @@ class _StatTable extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      "缁撲綑",
+                      "结余",
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                             fontWeight: FontWeight.w600,
                             color: const Color(0xFF6B5A60),
@@ -667,7 +667,7 @@ class _StatTable extends StatelessWidget {
                       ),
                       Expanded(
                         child: Text(
-                          "楼${row.income}",
+                          "￥${row.income}",
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: const Color(0xFF198754),
                                 fontWeight: FontWeight.w600,
@@ -677,7 +677,7 @@ class _StatTable extends StatelessWidget {
                       ),
                       Expanded(
                         child: Text(
-                          "楼${row.expense}",
+                          "￥${row.expense}",
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 color: const Color(0xFFB02A37),
                                 fontWeight: FontWeight.w600,
@@ -698,7 +698,7 @@ class _StatTable extends StatelessWidget {
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            "楼${row.balance}",
+                            "￥${row.balance}",
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: row.balance >= 0
                                       ? const Color(0xFF198754)

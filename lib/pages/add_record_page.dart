@@ -15,28 +15,28 @@ class _AddRecordPageState extends State<AddRecordPage> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
 
-  String _type = "鏀剁ぜ";
-  String _relationship = "鏈嬪弸";
+  String _type = "收礼";
+  String _relationship = "朋友";
   DateTime _date = DateTime(2026, 3, 15);
 
   static const _relationshipOptions = [
-    "瀹朵汉",
-    "浜叉垰",
-    "鏈嬪弸",
-    "鍚屼簨",
-    "鍚屽",
-    "閭婚噷",
-    "鍏朵粬",
+    "家人",
+    "亲戚",
+    "朋友",
+    "同事",
+    "同学",
+    "邻里",
+    "其他",
   ];
 
   static const _occasionOptions = [
-    "濠氱ぜ",
-    "婊℃湀",
-    "涔旇縼",
-    "瀵垮",
-    "鍗囧",
-    "寮€涓?",
-    "鐧戒簨",
+    "婚礼",
+    "满月",
+    "乔迁",
+    "寿宴",
+    "升学",
+    "开业",
+    "白事",
   ];
 
   @override
@@ -67,7 +67,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "鏂板璁板綍",
+          "新增记录",
           style: TextStyle(fontWeight: FontWeight.w600),
         ),
         actions: [
@@ -86,7 +86,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 ),
               ),
               child: const Text(
-                "淇濆瓨",
+                "保存",
                 style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
@@ -102,7 +102,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "璁板綍绫诲瀷",
+                  "记录类型",
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -123,17 +123,17 @@ class _AddRecordPageState extends State<AddRecordPage> {
                   child: SegmentedButton<String>(
                     segments: const [
                       ButtonSegment(
-                        value: "鏀剁ぜ",
+                        value: "收礼",
                         label: Text(
-                          "鏀剁ぜ",
+                          "收礼",
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                         icon: Icon(Icons.call_received, size: 18),
                       ),
                       ButtonSegment(
-                        value: "闅忕ぜ",
+                        value: "随礼",
                         label: Text(
-                          "闅忕ぜ",
+                          "随礼",
                           style: TextStyle(fontWeight: FontWeight.w600),
                         ),
                         icon: Icon(Icons.call_made, size: 18),
@@ -154,17 +154,17 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 ),
                 const SizedBox(height: 24),
                 _FormSection(
-                  title: "鍩烘湰淇℃伅",
+                  title: "基本信息",
                   child: Column(
                     children: [
                       _EnhancedTextFormField(
                         controller: _nameController,
-                        labelText: "瀵硅薄濮撳悕",
-                        hintText: "渚嬪锛氬紶灏忓叞",
+                        labelText: "对象姓名",
+                        hintText: "例如：张小兰",
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return "璇疯緭鍏ュ鍚?";
+                            return "请输入姓名";
                           }
                           return null;
                         },
@@ -173,7 +173,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                       const SizedBox(height: 16),
                       _EnhancedDropdownFormField<String>(
                         value: _relationship,
-                        labelText: "鍏崇郴",
+                        labelText: "关系",
                         items: _relationshipOptions
                             .map(
                               (option) => DropdownMenuItem(
@@ -185,22 +185,22 @@ class _AddRecordPageState extends State<AddRecordPage> {
                         onChanged: (value) {
                           if (value == null) return;
                           setState(() => _relationship = value);
-                          if (value != "鍏朵粬") {
+                          if (value != "其他") {
                             _relationshipController.clear();
                           }
                         },
                       ),
-                      if (_relationship == "鍏朵粬") ...[
+                      if (_relationship == "其他") ...[
                         const SizedBox(height: 12),
                         _EnhancedTextFormField(
                           controller: _relationshipController,
-                          labelText: "鍏崇郴琛ュ厖",
-                          hintText: "渚嬪锛氬鎴?/ 浼欎即",
+                          labelText: "关系补充",
+                          hintText: "例如：客户/伙伴",
                           textInputAction: TextInputAction.next,
                           validator: (value) {
-                            if (_relationship == "鍏朵粬" &&
+                            if (_relationship == "其他" &&
                                 (value == null || value.trim().isEmpty)) {
-                              return "璇疯緭鍏ュ叧绯昏ˉ鍏?";
+                              return "请输入关系补充";
                             }
                             return null;
                           },
@@ -212,12 +212,12 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 ),
                 const SizedBox(height: 20),
                 _FormSection(
-                  title: "鍦哄悎璁剧疆",
+                  title: "场合设置",
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "甯哥敤鍦哄悎",
+                        "常用场合",
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                               color: const Color(0xFF6B5A60),
@@ -259,12 +259,12 @@ class _AddRecordPageState extends State<AddRecordPage> {
                       const SizedBox(height: 16),
                       _EnhancedTextFormField(
                         controller: _occasionController,
-                        labelText: "鍦哄悎",
-                        hintText: "渚嬪锛氬绀?/ 婊℃湀",
+                        labelText: "场合",
+                        hintText: "例如：婚礼/满月",
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return "璇疯緭鍏ュ満鍚?";
+                            return "请输入场合";
                           }
                           return null;
                         },
@@ -275,27 +275,27 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 ),
                 const SizedBox(height: 20),
                 _FormSection(
-                  title: "閲戦涓庢棩鏈?",
+                  title: "金额与日期",
                   child: Column(
                     children: [
                       _EnhancedTextFormField(
                         controller: _amountController,
-                        labelText: "閲戦",
-                        hintText: "渚嬪锛?00",
+                        labelText: "金额",
+                        hintText: "例如：200",
                         keyboardType: TextInputType.number,
                         textInputAction: TextInputAction.next,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return "璇疯緭鍏ラ噾棰?";
+                            return "请输入金额";
                           }
                           final amount = int.tryParse(value.trim());
                           if (amount == null || amount <= 0) {
-                            return "閲戦闇€瑕佹槸姝ｆ暣鏁?";
+                            return "金额需要是正整数";
                           }
                           return null;
                         },
                         prefixIcon: Icons.attach_money,
-                        suffixText: "鍏?",
+                        suffixText: "元",
                       ),
                       const SizedBox(height: 16),
                       InkWell(
@@ -327,7 +327,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      "鏃ユ湡",
+                                      "日期",
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
@@ -361,8 +361,8 @@ class _AddRecordPageState extends State<AddRecordPage> {
                       const SizedBox(height: 16),
                       _EnhancedTextFormField(
                         controller: _noteController,
-                        labelText: "澶囨敞",
-                        hintText: "鍙€?",
+                        labelText: "备注",
+                        hintText: "可选",
                         maxLines: 3,
                         prefixIcon: Icons.note_outlined,
                       ),
@@ -385,7 +385,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                       ),
                     ),
                     child: const Text(
-                      "淇濆瓨璁板綍",
+                      "保存记录",
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

@@ -103,7 +103,7 @@ class RenqingLedgerApp extends StatelessWidget {
     );
 
     return MaterialApp(
-      title: "浜烘儏璐︽湰",
+      title: "人情账本",
       theme: theme,
       initialRoute: AppRoutes.records,
       onGenerateRoute: AppRoutes.onGenerateRoute,

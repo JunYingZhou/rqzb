@@ -35,12 +35,12 @@ class ShellScaffold extends StatelessWidget {
           NavigationDestination(
             icon: Icon(Icons.receipt_long_outlined),
             selectedIcon: Icon(Icons.receipt_long),
-            label: "璁板綍",
+            label: "记录",
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
-            label: "鎴戠殑",
+            label: "我的",
           ),
         ],
       ),

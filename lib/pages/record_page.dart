@@ -1,4 +1,4 @@
-import "dart:io";
+ï»¿import "dart:io";
 
 import "package:flutter/material.dart";
 import "package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart";
@@ -38,7 +38,7 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> _showPickOptions() async {
     if (_isProcessing) return;
     if (_selectedImages.length >= _maxImages) {
-      _showSnackBar("×î¶àÖ»ÄÜÊ¶±ğ$_maxImagesÕÅÍ¼Æ¬");
+      _showSnackBar("æœ€å¤šåªèƒ½è¯†åˆ«$_maxImageså¼ å›¾ç‰‡");
       return;
     }
 
@@ -52,7 +52,7 @@ class _RecordPageState extends State<RecordPage> {
             children: [
               ListTile(
                 leading: const Icon(Icons.photo_camera),
-                title: const Text("ÅÄÕÕÊ¶±ğ"),
+                title: const Text("æ‹ç…§è¯†åˆ«"),
                 onTap: () async {
                   Navigator.of(context).pop();
                   await _pickFromCamera();
@@ -60,7 +60,7 @@ class _RecordPageState extends State<RecordPage> {
               ),
               ListTile(
                 leading: const Icon(Icons.photo_library),
-                title: const Text("Ïà²áÑ¡Ôñ"),
+                title: const Text("ç›¸å†Œé€‰æ‹©"),
                 onTap: () async {
                   Navigator.of(context).pop();
                   await _pickFromGallery();
@@ -77,7 +77,7 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> _pickFromCamera() async {
     final remaining = _maxImages - _selectedImages.length;
     if (remaining <= 0) {
-      _showSnackBar("×î¶àÖ»ÄÜÊ¶±ğ$_maxImagesÕÅÍ¼Æ¬");
+      _showSnackBar("æœ€å¤šåªèƒ½è¯†åˆ«$_maxImageså¼ å›¾ç‰‡");
       return;
     }
 
@@ -93,7 +93,7 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> _pickFromGallery() async {
     final remaining = _maxImages - _selectedImages.length;
     if (remaining <= 0) {
-      _showSnackBar("×î¶àÖ»ÄÜÊ¶±ğ$_maxImagesÕÅÍ¼Æ¬");
+      _showSnackBar("æœ€å¤šåªèƒ½è¯†åˆ«$_maxImageså¼ å›¾ç‰‡");
       return;
     }
 
@@ -102,7 +102,7 @@ class _RecordPageState extends State<RecordPage> {
 
     final limited = picked.take(remaining).toList();
     if (picked.length > remaining) {
-      _showSnackBar("ÒÑÑ¡ÔñÇ°$remainingÕÅÍ¼Æ¬½øĞĞÊ¶±ğ");
+      _showSnackBar("å·²é€‰æ‹©å‰$remainingå¼ å›¾ç‰‡è¿›è¡Œè¯†åˆ«");
     }
 
     final List<File> croppedImages = [];
@@ -123,13 +123,13 @@ class _RecordPageState extends State<RecordPage> {
       compressQuality: 90,
       uiSettings: [
         AndroidUiSettings(
-          toolbarTitle: "²Ã¼ôÍ¼Æ¬",
+          toolbarTitle: "è£å‰ªå›¾ç‰‡",
           toolbarColor: Theme.of(context).colorScheme.primary,
           toolbarWidgetColor: Colors.white,
           lockAspectRatio: false,
         ),
         IOSUiSettings(
-          title: "²Ã¼ôÍ¼Æ¬",
+          title: "è£å‰ªå›¾ç‰‡",
         ),
       ],
     );
@@ -179,7 +179,7 @@ class _RecordPageState extends State<RecordPage> {
                 child: CircularProgressIndicator(strokeWidth: 2),
               ),
               SizedBox(width: 16),
-              Expanded(child: Text("ÕıÔÚÊ¶±ğ£¬ÇëÉÔºò...")),
+              Expanded(child: Text("æ­£åœ¨è¯†åˆ«ï¼Œè¯·ç¨å€™...")),
             ],
           ),
         );
@@ -188,54 +188,43 @@ class _RecordPageState extends State<RecordPage> {
   }
 
   void _showOcrResults(List<String> results) {
-    showModalBottomSheet<void>(
+    showDialog<void>(
       context: context,
-      showDragHandle: true,
-      isScrollControlled: true,
       builder: (context) {
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "OCRÊ¶±ğ½á¹û",
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 12),
-                if (results.isEmpty)
-                  const Text("Î´Ê¶±ğµ½ÎÄ±¾")
-                else
-                  ...results.map((text) {
-                    return Container(
-                      width: double.infinity,
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest
-                            .withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Text(
-                        text.isEmpty ? "Î´Ê¶±ğµ½ÎÄ±¾" : text,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    );
-                  }),
-                const SizedBox(height: 4),
-                Text(
-                  "Ê¶±ğÄÚÈİµÄÒµÎñ´¦Àí´ı½ÓÈë",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: const Color(0xFF6B5A60),
-                      ),
-                ),
-              ],
+        return AlertDialog(
+          title: const Text("OCRè¯†åˆ«ç»“æœ"),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (results.isEmpty)
+                    const Text("æœªè¯†åˆ«åˆ°æ–‡æœ¬")
+                  else
+                    ...results.map((text) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text(text.isEmpty ? "æœªè¯†åˆ«åˆ°æ–‡æœ¬" : text),
+                      );
+                    }),
+                  const SizedBox(height: 4),
+                  Text(
+                    "è¯†åˆ«å†…å®¹çš„ä¸šåŠ¡å¤„ç†å¾…æ¥å…¥",
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF6B5A60),
+                        ),
+                  ),
+                ],
+              ),
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text("å…³é—­"),
+            ),
+          ],
         );
       },
     );
@@ -256,7 +245,7 @@ class _RecordPageState extends State<RecordPage> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _isProcessing ? null : _showPickOptions,
         icon: const Icon(Icons.document_scanner_outlined),
-        label: const Text("OCRÊ¶±ğ"),
+        label: const Text("OCRè¯†åˆ«"),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       child: SafeArea(
@@ -280,7 +269,7 @@ class _RecordPageState extends State<RecordPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "æœ¬å­£åº¦æ¦‚è§?",
+                      "æœ¬æœˆæ¦‚è§ˆ",
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
@@ -289,7 +278,7 @@ class _RecordPageState extends State<RecordPage> {
                         Expanded(
                           child: _StatCard(
                             label: "æ”¶ç¤¼",
-                            value: "Â¥2,680",
+                            value: "ï¿¥2,680",
                             highlight: colorScheme.primaryContainer,
                             icon: Icons.call_received,
                           ),
@@ -298,7 +287,7 @@ class _RecordPageState extends State<RecordPage> {
                         Expanded(
                           child: _StatCard(
                             label: "éšç¤¼",
-                            value: "Â¥1,920",
+                            value: "ï¿¥1,920",
                             highlight: colorScheme.secondaryContainer,
                             icon: Icons.call_made,
                           ),
@@ -319,55 +308,9 @@ class _RecordPageState extends State<RecordPage> {
             ),
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-                child: Card(
-                  elevation: 1,
-                  shadowColor: const Color(0x0F000000),
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "OCRÊ¶±ğÄÚÈİ",
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        if (_ocrResults.isEmpty)
-                          Text(
-                            "µã»÷ÓÒÏÂ½Ç°´Å¥ÅÄÕÕ»òÑ¡ÔñÏà²áÍ¼Æ¬½øĞĞÊ¶±ğ",
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: const Color(0xFF6B5A60),
-                                ),
-                          )
-                        else
-                          ..._ocrResults.map((text) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: Text(
-                                text.isEmpty ? "Î´Ê¶±ğµ½ÎÄ±¾" : text,
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            );
-                          }),
-                        const SizedBox(height: 6),
-                        Text(
-                          "Ê¶±ğÄÚÈİÒµÎñ´ı´¦Àí",
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: const Color(0xFF6B5A60),
-                              ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
                 child: Text(
-                  "æœ€è¿‘è®°å½?",
+                  "æœ€è¿‘è®°å½•",
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -379,7 +322,7 @@ class _RecordPageState extends State<RecordPage> {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _RecordTile(
-                    name: "å¼ å°å…?",
+                    name: "å¼ å°å…­",
                     category: "å©šç¤¼",
                     relationship: "æœ‹å‹",
                     date: "2026-03-14",
@@ -696,7 +639,7 @@ class _RecordTileState extends State<_RecordTile>
   @override
   Widget build(BuildContext context) {
     final isIncome = widget.amount >= 0;
-    final amountText = "${isIncome ? "+" : "-"}Â¥${widget.amount.abs()}";
+    final amountText = "${isIncome ? "+" : "-"}ï¿¥${widget.amount.abs()}";
     final amountColor = isIncome
         ? const Color(0xFF198754)
         : const Color(0xFFB02A37);
@@ -859,7 +802,7 @@ class _RecordTileState extends State<_RecordTile>
         return Icons.cake;
       case "å‡å­¦":
         return Icons.school;
-      case "å¼€ä¸?":
+      case "å¼€ä¸š":
         return Icons.business;
       case "ç™½äº‹":
         return Icons.church;
