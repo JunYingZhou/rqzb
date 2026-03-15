@@ -1,4 +1,6 @@
 ﻿import "package:flutter/material.dart";
+import "../data/isar_db.dart";
+import "../data/renqing_record.dart";
 
 class AddRecordPage extends StatefulWidget {
   const AddRecordPage({super.key});
@@ -17,7 +19,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
 
   String _type = "收礼";
   String _relationship = "朋友";
-  DateTime _date = DateTime(2026, 3, 15);
+  DateTime _date = DateTime.now();
 
   static const _relationshipOptions = [
     "家人",
@@ -62,6 +64,35 @@ class _AddRecordPageState extends State<AddRecordPage> {
     }
   }
 
+  Future<void> _saveRecord() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
+    final amountValue = int.parse(_amountController.text.trim());
+    final normalizedAmount = _type == "收礼" ? amountValue : -amountValue;
+    final relationshipNote = _relationship == "其他"
+        ? _relationshipController.text.trim()
+        : null;
+
+    final record = RenqingRecord()
+      ..type = _type
+      ..name = _nameController.text.trim()
+      ..relationship = _relationship
+      ..relationshipNote =
+          relationshipNote?.isEmpty == true ? null : relationshipNote
+      ..occasion = _occasionController.text.trim()
+      ..amount = normalizedAmount
+      ..date = _date
+      ..note = _noteController.text.trim().isEmpty
+          ? null
+          : _noteController.text.trim()
+      ..createdAt = DateTime.now();
+
+    await RecordRepository.add(record);
+
+    if (!mounted) return;
+    Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -74,11 +105,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
           Container(
             margin: const EdgeInsets.only(right: 8),
             child: TextButton(
-              onPressed: () {
-                if (_formKey.currentState?.validate() ?? false) {
-                  Navigator.of(context).pop();
-                }
-              },
+              onPressed: _saveRecord,
               style: TextButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 shape: RoundedRectangleBorder(
@@ -373,11 +400,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: () {
-                      if (_formKey.currentState?.validate() ?? false) {
-                        Navigator.of(context).pop();
-                      }
-                    },
+                    onPressed: _saveRecord,
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
@@ -578,3 +601,4 @@ class _EnhancedChoiceChip extends StatelessWidget {
     );
   }
 }
+

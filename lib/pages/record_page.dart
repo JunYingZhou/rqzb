@@ -4,6 +4,8 @@ import "package:flutter/material.dart";
 import "package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart";
 import "package:image_cropper/image_cropper.dart";
 import "package:image_picker/image_picker.dart";
+import "../data/isar_db.dart";
+import "../data/renqing_record.dart";
 import "../routes.dart";
 import "../widgets/shell_scaffold.dart";
 
@@ -239,107 +241,170 @@ class _RecordPageState extends State<RecordPage> {
     );
   }
 
+  String _formatAmount(int amount) {
+    return "￥${amount.abs()}";
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, "0")}-${date.day.toString().padLeft(2, "0")}";
+  }
+
+  String _relationshipLabel(RenqingRecord record) {
+    if (record.relationship == "其他") {
+      final note = record.relationshipNote?.trim();
+      if (note != null && note.isNotEmpty) {
+        return note;
+      }
+    }
+    return record.relationship;
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    return ShellScaffold(
-      currentIndex: 0,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _isProcessing ? null : _showPickOptions,
-        icon: const Icon(Icons.document_scanner_outlined),
-        label: const Text("OCR识别"),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      child: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              floating: false,
-              title: const Text("记录"),
-              actions: [
-                IconButton(
-                  onPressed: () {},
-                  icon: const Icon(Icons.search),
-                ),
-              ],
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "本月概览",
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _StatCard(
-                            label: "收礼",
-                            value: "￥2,680",
-                            highlight: colorScheme.primaryContainer,
-                            icon: Icons.call_received,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _StatCard(
-                            label: "随礼",
-                            value: "￥1,920",
-                            highlight: colorScheme.secondaryContainer,
-                            icon: Icons.call_made,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _QuickActions(
-                      onAdd: () {
-                        Navigator.of(context).pushNamed(AppRoutes.addRecord);
-                      },
-                      onImport: () {},
-                      onExport: () {},
+    return StreamBuilder<List<RenqingRecord>>(
+      stream: RecordRepository.watchAll(),
+      builder: (context, snapshot) {
+        final records = snapshot.data ?? const <RenqingRecord>[];
+        final now = DateTime.now();
+        final monthRecords = records.where(
+          (record) =>
+              record.date.year == now.year && record.date.month == now.month,
+        );
+        final income = monthRecords
+            .where((record) => record.amount >= 0)
+            .fold<int>(0, (sum, record) => sum + record.amount);
+        final expense = monthRecords
+            .where((record) => record.amount < 0)
+            .fold<int>(0, (sum, record) => sum + record.amount.abs());
+
+        return ShellScaffold(
+          currentIndex: 0,
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: _isProcessing ? null : _showPickOptions,
+            icon: const Icon(Icons.document_scanner_outlined),
+            label: const Text("OCR识别"),
+          ),
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+          child: SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  floating: false,
+                  title: const Text("记录"),
+                  actions: [
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.search),
                     ),
                   ],
                 ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-                child: Text(
-                  "最近记录",
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ),
-            SliverList.separated(
-              itemCount: 6,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: _RecordTile(
-                    name: "张小六",
-                    category: "婚礼",
-                    relationship: "朋友",
-                    date: "2026-03-14",
-                    amount: index.isEven ? 500 : -300,
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "本月概览",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatCard(
+                                label: "收礼",
+                                value: _formatAmount(income),
+                                highlight: colorScheme.primaryContainer,
+                                icon: Icons.call_received,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _StatCard(
+                                label: "随礼",
+                                value: _formatAmount(expense),
+                                highlight: colorScheme.secondaryContainer,
+                                icon: Icons.call_made,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        _QuickActions(
+                          onAdd: () {
+                            Navigator.of(context).pushNamed(AppRoutes.addRecord);
+                          },
+                          onImport: () {},
+                          onExport: () {},
+                        ),
+                      ],
+                    ),
                   ),
-                );
-              },
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
+                    child: Text(
+                      "最近记录",
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ),
+                if (records.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 24,
+                      ),
+                      child: Card(
+                        elevation: 0,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Text(
+                            "还没有记录，先新增一条吧。",
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: const Color(0xFF6B5A60),
+                                ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                else
+                  SliverList.separated(
+                    itemCount: records.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 8),
+                    itemBuilder: (context, index) {
+                      final record = records[index];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: _RecordTile(
+                          name: record.name,
+                          category: record.occasion,
+                          relationship: _relationshipLabel(record),
+                          date: _formatDate(record.date),
+                          amount: record.amount,
+                        ),
+                      );
+                    },
+                  ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 32),
+                ),
+              ],
             ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 32),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -814,3 +879,4 @@ class _RecordTileState extends State<_RecordTile>
     }
   }
 }
+

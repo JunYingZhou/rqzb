@@ -13,6 +13,19 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// Fix AGP 8+ namespace requirement for 3rd-party library modules (e.g. isar_flutter_libs).
+subprojects { project ->
+    project.plugins.withId("com.android.library") {
+        def androidExt = project.extensions.findByName("android")
+        if (androidExt != null && (androidExt.namespace == null || androidExt.namespace.toString().trim().isEmpty())) {
+            def groupValue = project.group?.toString()?.trim()
+            androidExt.namespace = (groupValue != null && !groupValue.isEmpty())
+                    ? groupValue
+                    : "dev.isar.${project.name}"
+        }
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
