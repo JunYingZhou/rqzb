@@ -14,6 +14,17 @@ class ProfilePage extends StatelessWidget {
             SliverAppBar(
               pinned: true,
               title: const Text("我的"),
+              actions: [
+                Builder(
+                  builder: (context) {
+                    return IconButton(
+                      onPressed: () => Scaffold.of(context).openEndDrawer(),
+                      icon: const Icon(Icons.settings),
+                      tooltip: "设置",
+                    );
+                  },
+                ),
+              ],
             ),
             SliverToBoxAdapter(
               child: Padding(

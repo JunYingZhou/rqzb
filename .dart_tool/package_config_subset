@@ -1,7 +1,7 @@
 renqing_ledger
 3.3
-file:///C:/Users/34975/.codex/worktrees/3c93/rqzb/
-file:///C:/Users/34975/.codex/worktrees/3c93/rqzb/lib/
+file:///C:/Users/34975/.codex/worktrees/c4a4/rqzb/
+file:///C:/Users/34975/.codex/worktrees/c4a4/rqzb/lib/
 _fe_analyzer_shared
 2.17
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/_fe_analyzer_shared-61.0.0/
@@ -138,6 +138,10 @@ flutter_plugin_android_lifecycle
 3.6
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/flutter_plugin_android_lifecycle-2.0.29/
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/flutter_plugin_android_lifecycle-2.0.29/lib/
+flutter_riverpod
+2.17
+file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/flutter_riverpod-2.6.1/
+file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/flutter_riverpod-2.6.1/lib/
 frontend_server_client
 3.0
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/frontend_server_client-4.0.0/
@@ -326,6 +330,10 @@ pubspec_parse
 3.6
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/pubspec_parse-1.5.0/
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/pubspec_parse-1.5.0/lib/
+riverpod
+2.17
+file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/riverpod-2.6.1/
+file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/riverpod-2.6.1/lib/
 shelf
 3.4
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/shelf-1.4.2/
@@ -346,6 +354,10 @@ stack_trace
 3.4
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/stack_trace-1.12.0/
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/stack_trace-1.12.0/lib/
+state_notifier
+2.12
+file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/state_notifier-1.0.0/
+file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/state_notifier-1.0.0/lib/
 stream_channel
 2.19
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/stream_channel-2.1.2/

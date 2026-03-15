@@ -1,31 +1,36 @@
-﻿import "package:flutter/material.dart";
+import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import "routes.dart";
+import "state/app_settings.dart";
 
-class RenqingLedgerApp extends StatelessWidget {
+class RenqingLedgerApp extends ConsumerWidget {
   const RenqingLedgerApp({super.key});
 
-  @override
-  Widget build(BuildContext context) {
-    const brand = Color(0xFFD31145);
+  ThemeData _buildTheme({
+    required Color brand,
+    required Brightness brightness,
+  }) {
+    final isDark = brightness == Brightness.dark;
 
-    // Enhanced color palette with better semantic colors
-    const semanticColors = {
-      'income': Color(0xFF198754), // Green for income
-      'expense': Color(0xFFB02A37), // Red for expense
-      'neutral': Color(0xFF6B5A60), // Neutral text
-      'surface': Color(0xFFF7F4F6), // Background
-      'onSurface': Color(0xFF1B0A0F), // Primary text
-      'cardShadow': Color(0x0A000000), // Subtle shadow
+    final semanticColors = {
+      "income": const Color(0xFF198754),
+      "expense": const Color(0xFFB02A37),
+      "neutral": isDark ? const Color(0xFFB8AEB2) : const Color(0xFF6B5A60),
+      "surface": isDark ? const Color(0xFF140E11) : const Color(0xFFF7F4F6),
+      "onSurface": isDark ? const Color(0xFFF2EAF0) : const Color(0xFF1B0A0F),
+      "cardShadow": isDark ? const Color(0x33000000) : const Color(0x0A000000),
     };
 
-    final theme = ThemeData(
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: brand,
+      primary: brand,
+      brightness: brightness,
+    );
+
+    return ThemeData(
       useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: brand,
-        primary: brand,
-        brightness: Brightness.light,
-      ),
-      scaffoldBackgroundColor: semanticColors['surface'],
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: semanticColors["surface"],
       textTheme: const TextTheme(
         headlineSmall: TextStyle(
           fontWeight: FontWeight.w700,
@@ -49,8 +54,8 @@ class RenqingLedgerApp extends StatelessWidget {
         ),
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: semanticColors['surface'],
-        foregroundColor: semanticColors['onSurface'],
+        backgroundColor: semanticColors["surface"],
+        foregroundColor: semanticColors["onSurface"],
         elevation: 0,
         centerTitle: false,
         titleTextStyle: const TextStyle(
@@ -60,16 +65,16 @@ class RenqingLedgerApp extends StatelessWidget {
         ),
       ),
       cardTheme: CardTheme(
-        color: Colors.white,
+        color: isDark ? const Color(0xFF1E151A) : Colors.white,
         elevation: 0,
-        shadowColor: semanticColors['cardShadow'],
+        shadowColor: semanticColors["cardShadow"],
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: isDark ? const Color(0xFF1E151A) : Colors.white,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide.none,
@@ -82,17 +87,17 @@ class RenqingLedgerApp extends StatelessWidget {
           ),
         ),
         labelStyle: TextStyle(
-          color: semanticColors['neutral'],
+          color: semanticColors["neutral"],
           fontWeight: FontWeight.w500,
         ),
         hintStyle: TextStyle(
-          color: semanticColors['neutral']?.withValues(alpha: 0.7),
+          color: semanticColors["neutral"]?.withValues(alpha: 0.7),
         ),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.white,
+        backgroundColor: isDark ? const Color(0xFF1A1216) : Colors.white,
         elevation: 8,
-        shadowColor: semanticColors['cardShadow'],
+        shadowColor: semanticColors["cardShadow"],
         labelTextStyle: WidgetStateProperty.all(
           const TextStyle(
             fontSize: 12,
@@ -101,13 +106,32 @@ class RenqingLedgerApp extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    const brand = Color(0xFFD31145);
+    final themeMode = ref.watch(appThemeModeProvider);
+    final fontScale = fontScaleFor(ref.watch(appFontSizeProvider));
 
     return MaterialApp(
       title: "人情账本",
-      theme: theme,
+      theme: _buildTheme(brand: brand, brightness: Brightness.light),
+      darkTheme: _buildTheme(brand: brand, brightness: Brightness.dark),
+      themeMode: toThemeMode(themeMode),
       initialRoute: AppRoutes.records,
       onGenerateRoute: AppRoutes.onGenerateRoute,
+      builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
+        return MediaQuery(
+          data: mediaQuery.copyWith(
+            textScaler: TextScaler.linear(fontScale),
+          ),
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
       debugShowCheckedModeBanner: false,
     );
   }
 }
+

@@ -1,9 +1,10 @@
 import "package:flutter/material.dart";
+import "package:flutter_riverpod/flutter_riverpod.dart";
 import "app.dart";
 import "data/isar_db.dart";
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await IsarDb.init();
-  runApp(const RenqingLedgerApp());
+  runApp(const ProviderScope(child: RenqingLedgerApp()));
 }

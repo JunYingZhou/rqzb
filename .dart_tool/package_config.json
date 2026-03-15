@@ -212,6 +212,12 @@
       "languageVersion": "3.6"
     },
     {
+      "name": "flutter_riverpod",
+      "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/flutter_riverpod-2.6.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
       "name": "flutter_test",
       "rootUri": "file:///D:/flutter/flutter_windows_3.27.1-stable/flutter/packages/flutter_test",
       "packageUri": "lib/",
@@ -506,6 +512,12 @@
       "languageVersion": "3.6"
     },
     {
+      "name": "riverpod",
+      "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/riverpod-2.6.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
       "name": "shelf",
       "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/shelf-1.4.2",
       "packageUri": "lib/",
@@ -540,6 +552,12 @@
       "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/stack_trace-1.12.0",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "state_notifier",
+      "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/state_notifier-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
     },
     {
       "name": "stream_channel",
@@ -650,7 +668,7 @@
       "languageVersion": "3.3"
     }
   ],
-  "generated": "2026-03-15T16:24:55.422956Z",
+  "generated": "2026-03-15T16:59:50.869581Z",
   "generator": "pub",
   "generatorVersion": "3.6.0",
   "flutterRoot": "file:///D:/flutter/flutter_windows_3.27.1-stable/flutter",

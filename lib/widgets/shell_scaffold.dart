@@ -1,5 +1,6 @@
-﻿import "package:flutter/material.dart";
+import "package:flutter/material.dart";
 import "../routes.dart";
+import "settings_drawer.dart";
 
 class ShellScaffold extends StatelessWidget {
   const ShellScaffold({
@@ -26,6 +27,7 @@ class ShellScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: child,
+      endDrawer: const SettingsDrawer(),
       floatingActionButton: floatingActionButton,
       floatingActionButtonLocation: floatingActionButtonLocation,
       bottomNavigationBar: NavigationBar(
@@ -47,3 +49,4 @@ class ShellScaffold extends StatelessWidget {
     );
   }
 }
+
