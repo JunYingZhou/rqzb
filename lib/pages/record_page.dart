@@ -1,9 +1,251 @@
-ï»¿import "package:flutter/material.dart";
+import "dart:io";
+
+import "package:flutter/material.dart";
+import "package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart";
+import "package:image_cropper/image_cropper.dart";
+import "package:image_picker/image_picker.dart";
 import "../routes.dart";
 import "../widgets/shell_scaffold.dart";
 
-class RecordPage extends StatelessWidget {
+class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
+
+  @override
+  State<RecordPage> createState() => _RecordPageState();
+}
+
+class _RecordPageState extends State<RecordPage> {
+  static const int _maxImages = 5;
+
+  final ImagePicker _picker = ImagePicker();
+  late final TextRecognizer _textRecognizer;
+  final List<File> _selectedImages = [];
+  final List<String> _ocrResults = [];
+  bool _isProcessing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _textRecognizer = TextRecognizer(script: TextRecognitionScript.chinese);
+  }
+
+  @override
+  void dispose() {
+    _textRecognizer.close();
+    super.dispose();
+  }
+
+  Future<void> _showPickOptions() async {
+    if (_isProcessing) return;
+    if (_selectedImages.length >= _maxImages) {
+      _showSnackBar("×î¶àÖ»ÄÜÊ¶±ğ$_maxImagesÕÅÍ¼Æ¬");
+      return;
+    }
+
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.photo_camera),
+                title: const Text("ÅÄÕÕÊ¶±ğ"),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await _pickFromCamera();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library),
+                title: const Text("Ïà²áÑ¡Ôñ"),
+                onTap: () async {
+                  Navigator.of(context).pop();
+                  await _pickFromGallery();
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _pickFromCamera() async {
+    final remaining = _maxImages - _selectedImages.length;
+    if (remaining <= 0) {
+      _showSnackBar("×î¶àÖ»ÄÜÊ¶±ğ$_maxImagesÕÅÍ¼Æ¬");
+      return;
+    }
+
+    final picked = await _picker.pickImage(source: ImageSource.camera);
+    if (picked == null) return;
+
+    final cropped = await _cropImage(picked.path);
+    if (!mounted || cropped == null) return;
+
+    await _runOcr([cropped]);
+  }
+
+  Future<void> _pickFromGallery() async {
+    final remaining = _maxImages - _selectedImages.length;
+    if (remaining <= 0) {
+      _showSnackBar("×î¶àÖ»ÄÜÊ¶±ğ$_maxImagesÕÅÍ¼Æ¬");
+      return;
+    }
+
+    final picked = await _picker.pickMultiImage();
+    if (picked.isEmpty) return;
+
+    final limited = picked.take(remaining).toList();
+    if (picked.length > remaining) {
+      _showSnackBar("ÒÑÑ¡ÔñÇ°$remainingÕÅÍ¼Æ¬½øĞĞÊ¶±ğ");
+    }
+
+    final List<File> croppedImages = [];
+    for (final image in limited) {
+      final cropped = await _cropImage(image.path);
+      if (cropped != null) {
+        croppedImages.add(cropped);
+      }
+    }
+
+    if (!mounted || croppedImages.isEmpty) return;
+    await _runOcr(croppedImages);
+  }
+
+  Future<File?> _cropImage(String path) async {
+    final croppedFile = await ImageCropper().cropImage(
+      sourcePath: path,
+      compressQuality: 90,
+      uiSettings: [
+        AndroidUiSettings(
+          toolbarTitle: "²Ã¼ôÍ¼Æ¬",
+          toolbarColor: Theme.of(context).colorScheme.primary,
+          toolbarWidgetColor: Colors.white,
+          lockAspectRatio: false,
+        ),
+        IOSUiSettings(
+          title: "²Ã¼ôÍ¼Æ¬",
+        ),
+      ],
+    );
+
+    if (croppedFile == null) return null;
+    return File(croppedFile.path);
+  }
+
+  Future<void> _runOcr(List<File> images) async {
+    if (_isProcessing) return;
+
+    setState(() => _isProcessing = true);
+    _showProcessingDialog();
+
+    final List<String> results = [];
+    for (final image in images) {
+      final inputImage = InputImage.fromFile(image);
+      final recognizedText = await _textRecognizer.processImage(inputImage);
+      results.add(recognizedText.text.trim());
+    }
+
+    if (!mounted) return;
+    Navigator.of(context, rootNavigator: true).pop();
+
+    setState(() {
+      _isProcessing = false;
+      _selectedImages.addAll(images);
+      _ocrResults
+        ..clear()
+        ..addAll(results);
+    });
+
+    _showOcrResults(results);
+  }
+
+  void _showProcessingDialog() {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return const AlertDialog(
+          content: Row(
+            children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 16),
+              Expanded(child: Text("ÕıÔÚÊ¶±ğ£¬ÇëÉÔºò...")),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showOcrResults(List<String> results) {
+    showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      isScrollControlled: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "OCRÊ¶±ğ½á¹û",
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                const SizedBox(height: 12),
+                if (results.isEmpty)
+                  const Text("Î´Ê¶±ğµ½ÎÄ±¾")
+                else
+                  ...results.map((text) {
+                    return Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        text.isEmpty ? "Î´Ê¶±ğµ½ÎÄ±¾" : text,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    );
+                  }),
+                const SizedBox(height: 4),
+                Text(
+                  "Ê¶±ğÄÚÈİµÄÒµÎñ´¦Àí´ı½ÓÈë",
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFF6B5A60),
+                      ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,13 +253,19 @@ class RecordPage extends StatelessWidget {
 
     return ShellScaffold(
       currentIndex: 0,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _isProcessing ? null : _showPickOptions,
+        icon: const Icon(Icons.document_scanner_outlined),
+        label: const Text("OCRÊ¶±ğ"),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       child: SafeArea(
         child: CustomScrollView(
           slivers: [
             SliverAppBar(
               pinned: true,
               floating: false,
-              title: const Text("ç’æ¿ç¶"),
+              title: const Text("è®°å½•"),
               actions: [
                 IconButton(
                   onPressed: () {},
@@ -32,7 +280,7 @@ class RecordPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "éˆî„€î„œæ´ï¸½î›§ç‘™?",
+                      "æœ¬å­£åº¦æ¦‚è§?",
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 12),
@@ -40,8 +288,8 @@ class RecordPage extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _StatCard(
-                            label: "é€å‰ãœ",
-                            value: "æ¥¼2,680",
+                            label: "æ”¶ç¤¼",
+                            value: "Â¥2,680",
                             highlight: colorScheme.primaryContainer,
                             icon: Icons.call_received,
                           ),
@@ -49,8 +297,8 @@ class RecordPage extends StatelessWidget {
                         const SizedBox(width: 12),
                         Expanded(
                           child: _StatCard(
-                            label: "é—…å¿•ãœ",
-                            value: "æ¥¼1,920",
+                            label: "éšç¤¼",
+                            value: "Â¥1,920",
                             highlight: colorScheme.secondaryContainer,
                             icon: Icons.call_made,
                           ),
@@ -71,9 +319,55 @@ class RecordPage extends StatelessWidget {
             ),
             SliverToBoxAdapter(
               child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                child: Card(
+                  elevation: 1,
+                  shadowColor: const Color(0x0F000000),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "OCRÊ¶±ğÄÚÈİ",
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 8),
+                        if (_ocrResults.isEmpty)
+                          Text(
+                            "µã»÷ÓÒÏÂ½Ç°´Å¥ÅÄÕÕ»òÑ¡ÔñÏà²áÍ¼Æ¬½øĞĞÊ¶±ğ",
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: const Color(0xFF6B5A60),
+                                ),
+                          )
+                        else
+                          ..._ocrResults.map((text) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Text(
+                                text.isEmpty ? "Î´Ê¶±ğµ½ÎÄ±¾" : text,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            );
+                          }),
+                        const SizedBox(height: 6),
+                        Text(
+                          "Ê¶±ğÄÚÈİÒµÎñ´ı´¦Àí",
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: const Color(0xFF6B5A60),
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
                 child: Text(
-                  "éˆâ‚¬æ©æˆ£î†‡è¤°?",
+                  "æœ€è¿‘è®°å½?",
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
               ),
@@ -85,9 +379,9 @@ class RecordPage extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: _RecordTile(
-                    name: "å¯®çŠ²çš¬é?",
-                    category: "æ¿ æ°±ãœ",
-                    relationship: "éˆå¬ªå¼¸",
+                    name: "å¼ å°å…?",
+                    category: "å©šç¤¼",
+                    relationship: "æœ‹å‹",
                     date: "2026-03-14",
                     amount: index.isEven ? 500 : -300,
                   ),
@@ -264,7 +558,7 @@ class _QuickActions extends StatelessWidget {
                 onPressed: onAdd,
                 icon: const Icon(Icons.add, size: 20),
                 label: const Text(
-                  "é‚æ¿î–ƒç’æ¿ç¶",
+                  "æ–°å¢è®°å½•",
                   style: TextStyle(fontWeight: FontWeight.w600),
                 ),
                 style: FilledButton.styleFrom(
@@ -282,13 +576,13 @@ class _QuickActions extends StatelessWidget {
             _ActionButton(
               onPressed: onImport,
               icon: Icons.file_upload_outlined,
-              tooltip: "ç€µç…å†éç‰ˆåµ",
+              tooltip: "å¯¼å…¥æ•°æ®",
             ),
             const SizedBox(width: 8),
             _ActionButton(
               onPressed: onExport,
               icon: Icons.file_download_outlined,
-              tooltip: "ç€µç…åš­éç‰ˆåµ",
+              tooltip: "å¯¼å‡ºæ•°æ®",
             ),
           ],
         ),
@@ -402,7 +696,7 @@ class _RecordTileState extends State<_RecordTile>
   @override
   Widget build(BuildContext context) {
     final isIncome = widget.amount >= 0;
-    final amountText = "${isIncome ? "+" : "-"}æ¥¼${widget.amount.abs()}";
+    final amountText = "${isIncome ? "+" : "-"}Â¥${widget.amount.abs()}";
     final amountColor = isIncome
         ? const Color(0xFF198754)
         : const Color(0xFFB02A37);
@@ -555,19 +849,19 @@ class _RecordTileState extends State<_RecordTile>
 
   IconData _getCategoryIcon(String category) {
     switch (category) {
-      case "æ¿ æ°±ãœ":
+      case "å©šç¤¼":
         return Icons.favorite;
-      case "å©Šâ„ƒæ¹€":
+      case "æ»¡æœˆ":
         return Icons.child_care;
-      case "æ¶”æ—‡ç¸¼":
+      case "ä¹”è¿":
         return Icons.home;
-      case "ç€µå®î†‹":
+      case "å¯¿å®´":
         return Icons.cake;
-      case "é—å›§î„Ÿ":
+      case "å‡å­¦":
         return Icons.school;
-      case "å¯®â‚¬æ¶“?":
+      case "å¼€ä¸?":
         return Icons.business;
-      case "é§æˆ’ç°¨":
+      case "ç™½äº‹":
         return Icons.church;
       default:
         return Icons.event;

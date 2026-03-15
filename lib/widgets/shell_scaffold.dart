@@ -6,10 +6,14 @@ class ShellScaffold extends StatelessWidget {
     super.key,
     required this.currentIndex,
     required this.child,
+    this.floatingActionButton,
+    this.floatingActionButtonLocation,
   });
 
   final int currentIndex;
   final Widget child;
+  final Widget? floatingActionButton;
+  final FloatingActionButtonLocation? floatingActionButtonLocation;
 
   void _onDestinationSelected(BuildContext context, int index) {
     if (index == currentIndex) return;
@@ -22,6 +26,8 @@ class ShellScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: child,
+      floatingActionButton: floatingActionButton,
+      floatingActionButtonLocation: floatingActionButtonLocation,
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentIndex,
         onDestinationSelected: (value) => _onDestinationSelected(context, value),
