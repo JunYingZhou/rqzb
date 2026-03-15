@@ -162,6 +162,9 @@ class _RecordPageState extends State<RecordPage> {
         ..addAll(results);
     });
 
+    // 打印
+    print(results);
+
     _showOcrResults(results);
   }
 
