@@ -757,7 +757,19 @@ class ProfilePage extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _QuarterTable(),
+              child: Column(
+                children: [
+                  _QuarterChart(
+                    rows: const [
+                      _TableRowData("2026 Q1", 2680, 1920, 760),
+                      _TableRowData("2025 Q4", 4220, 2510, 1710),
+                      _TableRowData("2025 Q3", 3180, 2090, 1090),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _QuarterTable(),
+                ],
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -772,7 +784,19 @@ class ProfilePage extends StatelessWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: _YearTable(),
+              child: Column(
+                children: [
+                  _YearChart(
+                    rows: const [
+                      _TableRowData("2026", 2680, 1920, 760),
+                      _TableRowData("2025", 14200, 9250, 4950),
+                      _TableRowData("2024", 11680, 8420, 3260),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _YearTable(),
+                ],
+              ),
             ),
           ),
           const SliverToBoxAdapter(
@@ -919,6 +943,68 @@ class _QuarterTable extends StatelessWidget {
   }
 }
 
+class _QuarterChart extends StatelessWidget {
+  const _QuarterChart({required this.rows});
+
+  final List<_TableRowData> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      shadowColor: const Color(0x0F000000),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+        child: Column(
+          children: [
+            _ChartLegend(
+              items: const [
+                _LegendItem(
+                  label: "鏀剁ぜ",
+                  color: Color(0xFF198754),
+                ),
+                _LegendItem(
+                  label: "闅忕ぜ",
+                  color: Color(0xFFB02A37),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 160,
+              child: CustomPaint(
+                painter: _GroupedBarChartPainter(
+                  rows: rows,
+                  incomeColor: const Color(0xFF198754),
+                  expenseColor: const Color(0xFFB02A37),
+                ),
+                size: Size.infinite,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: rows
+                  .map(
+                    (row) => Expanded(
+                      child: Text(
+                        row.period,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF6B5A60),
+                              fontWeight: FontWeight.w600,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _YearTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -932,6 +1018,64 @@ class _YearTable extends StatelessWidget {
   }
 }
 
+class _YearChart extends StatelessWidget {
+  const _YearChart({required this.rows});
+
+  final List<_TableRowData> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 1,
+      shadowColor: const Color(0x0F000000),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+        child: Column(
+          children: [
+            _ChartLegend(
+              items: const [
+                _LegendItem(
+                  label: "缁撲綑",
+                  color: Color(0xFF1B0A0F),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 160,
+              child: CustomPaint(
+                painter: _LineChartPainter(
+                  rows: rows,
+                  lineColor: const Color(0xFF1B0A0F),
+                  pointFill: const Color(0xFFD31145),
+                ),
+                size: Size.infinite,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: rows
+                  .map(
+                    (row) => Expanded(
+                      child: Text(
+                        row.period,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF6B5A60),
+                              fontWeight: FontWeight.w600,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  )
+                  .toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _TableRowData {
   const _TableRowData(this.period, this.income, this.expense, this.balance);
 
@@ -939,6 +1083,217 @@ class _TableRowData {
   final int income;
   final int expense;
   final int balance;
+}
+
+class _LegendItem {
+  const _LegendItem({
+    required this.label,
+    required this.color,
+  });
+
+  final String label;
+  final Color color;
+}
+
+class _ChartLegend extends StatelessWidget {
+  const _ChartLegend({required this.items});
+
+  final List<_LegendItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: items
+          .map(
+            (item) => Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: item.color,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    item.label,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: const Color(0xFF6B5A60),
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class _GroupedBarChartPainter extends CustomPainter {
+  _GroupedBarChartPainter({
+    required this.rows,
+    required this.incomeColor,
+    required this.expenseColor,
+  });
+
+  final List<_TableRowData> rows;
+  final Color incomeColor;
+  final Color expenseColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (rows.isEmpty) return;
+
+    final maxValue = rows
+        .map((row) => row.income > row.expense ? row.income : row.expense)
+        .reduce((a, b) => a > b ? a : b)
+        .toDouble()
+        .clamp(1, double.infinity);
+
+    final chartPadding = const EdgeInsets.fromLTRB(8, 8, 8, 20);
+    final chartWidth = size.width - chartPadding.horizontal;
+    final chartHeight = size.height - chartPadding.vertical;
+
+    final groupWidth = chartWidth / rows.length;
+    final barWidth = groupWidth * 0.28;
+    final barGap = groupWidth * 0.12;
+
+    final baseY = chartPadding.top + chartHeight;
+    final axisPaint = Paint()
+      ..color = const Color(0x1A000000)
+      ..strokeWidth = 1;
+
+    canvas.drawLine(
+      Offset(chartPadding.left, baseY),
+      Offset(chartPadding.left + chartWidth, baseY),
+      axisPaint,
+    );
+
+    for (var i = 0; i < rows.length; i++) {
+      final row = rows[i];
+      final centerX = chartPadding.left + groupWidth * (i + 0.5);
+
+      final incomeHeight = (row.income / maxValue) * chartHeight;
+      final expenseHeight = (row.expense / maxValue) * chartHeight;
+
+      final incomeRect = Rect.fromLTWH(
+        centerX - barWidth - barGap / 2,
+        baseY - incomeHeight,
+        barWidth,
+        incomeHeight,
+      );
+      final expenseRect = Rect.fromLTWH(
+        centerX + barGap / 2,
+        baseY - expenseHeight,
+        barWidth,
+        expenseHeight,
+      );
+
+      final incomePaint = Paint()..color = incomeColor;
+      final expensePaint = Paint()..color = expenseColor;
+
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(incomeRect, const Radius.circular(6)),
+        incomePaint,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(expenseRect, const Radius.circular(6)),
+        expensePaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _GroupedBarChartPainter oldDelegate) {
+    return oldDelegate.rows != rows ||
+        oldDelegate.incomeColor != incomeColor ||
+        oldDelegate.expenseColor != expenseColor;
+  }
+}
+
+class _LineChartPainter extends CustomPainter {
+  _LineChartPainter({
+    required this.rows,
+    required this.lineColor,
+    required this.pointFill,
+  });
+
+  final List<_TableRowData> rows;
+  final Color lineColor;
+  final Color pointFill;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (rows.isEmpty) return;
+
+    final values = rows.map((row) => row.balance.toDouble()).toList();
+    final rawMax = values.reduce((a, b) => a > b ? a : b);
+    final rawMin = values.reduce((a, b) => a < b ? a : b);
+    final maxValue = rawMax < 1 ? 1.0 : rawMax;
+    final minValue = rawMin > 0 ? 0.0 : rawMin;
+    final range = (maxValue - minValue).abs() < 1 ? 1.0 : (maxValue - minValue);
+
+    final chartPadding = const EdgeInsets.fromLTRB(8, 8, 8, 20);
+    final chartWidth = size.width - chartPadding.horizontal;
+    final chartHeight = size.height - chartPadding.vertical;
+
+    final pointGap = rows.length == 1 ? 0 : chartWidth / (rows.length - 1);
+
+    final axisPaint = Paint()
+      ..color = const Color(0x1A000000)
+      ..strokeWidth = 1;
+    final baseY = chartPadding.top + chartHeight;
+
+    canvas.drawLine(
+      Offset(chartPadding.left, baseY),
+      Offset(chartPadding.left + chartWidth, baseY),
+      axisPaint,
+    );
+
+    final linePaint = Paint()
+      ..color = lineColor
+      ..strokeWidth = 2.5
+      ..style = PaintingStyle.stroke;
+
+    final path = Path();
+    for (var i = 0; i < rows.length; i++) {
+      final value = rows[i].balance.toDouble();
+      final x = chartPadding.left + pointGap * i;
+      final normalized = (value - minValue) / range;
+      final y = chartPadding.top + chartHeight - (normalized * chartHeight);
+
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+
+    canvas.drawPath(path, linePaint);
+
+    final pointPaint = Paint()..color = pointFill;
+    for (var i = 0; i < rows.length; i++) {
+      final value = rows[i].balance.toDouble();
+      final x = chartPadding.left + pointGap * i;
+      final normalized = (value - minValue) / range;
+      final y = chartPadding.top + chartHeight - (normalized * chartHeight);
+
+      canvas.drawCircle(Offset(x, y), 4.2, pointPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _LineChartPainter oldDelegate) {
+    return oldDelegate.rows != rows ||
+        oldDelegate.lineColor != lineColor ||
+        oldDelegate.pointFill != pointFill;
+  }
 }
 
 class _StatTable extends StatelessWidget {

@@ -1,3 +1,7 @@
+renqing_ledger
+3.3
+file:///C:/Users/34975/.codex/worktrees/74a4/rqzb/
+file:///C:/Users/34975/.codex/worktrees/74a4/rqzb/lib/
 async
 2.18
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/async-2.11.0/
@@ -94,10 +98,6 @@ vm_service
 3.3
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/vm_service-14.3.0/
 file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/mirrors.tuna.tsinghua.edu.cn%2547dart-pub%2547/vm_service-14.3.0/lib/
-renqing_ledger
-3.3
-file:///D:/codex1/rqzb/
-file:///D:/codex1/rqzb/lib/
 sky_engine
 3.2
 file:///D:/flutter/flutter_windows_3.27.1-stable/flutter/bin/cache/pkg/sky_engine/
