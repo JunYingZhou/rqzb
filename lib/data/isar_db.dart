@@ -46,6 +46,18 @@ class PersonRepository {
     return IsarDb.instance.persons.where().watch(fireImmediately: true);
   }
 
+  static Future<Person?> findByName(String name) {
+    final normalizedName = name.trim();
+    if (normalizedName.isEmpty) {
+      return Future.value(null);
+    }
+
+    return IsarDb.instance.persons
+        .filter()
+        .nameEqualTo(normalizedName)
+        .findFirst();
+  }
+
   static Future<void> add(Person person) async {
     person.updatedAt = DateTime.now();
     await IsarDb.instance.writeTxn(() async {
