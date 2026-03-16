@@ -1,4 +1,6 @@
 ﻿import "package:flutter/material.dart";
+import "../data/isar_db.dart";
+import "../data/renqing_record.dart";
 import "../widgets/shell_scaffold.dart";
 
 class ProfilePage extends StatelessWidget {
@@ -6,94 +8,174 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ShellScaffold(
-      currentIndex: 1,
-      child: SafeArea(
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              title: const Text("我的"),
-              actions: [
-                Builder(
-                  builder: (context) {
-                    return IconButton(
-                      onPressed: () => Scaffold.of(context).openEndDrawer(),
-                      icon: const Icon(Icons.settings),
-                      tooltip: "设置",
-                    );
-                  },
+    return StreamBuilder<List<RenqingRecord>>(
+      stream: RecordRepository.watchAll(),
+      builder: (context, snapshot) {
+        final records = snapshot.data ?? const <RenqingRecord>[];
+        final quarterRows = _buildQuarterRows(records);
+        final yearRows = _buildYearRows(records);
+
+        return ShellScaffold(
+          currentIndex: 1,
+          child: SafeArea(
+            child: CustomScrollView(
+              slivers: [
+                SliverAppBar(
+                  pinned: true,
+                  title: const Text("我的"),
+                  actions: [
+                    Builder(
+                      builder: (context) {
+                        return IconButton(
+                          onPressed: () => Scaffold.of(context).openEndDrawer(),
+                          icon: const Icon(Icons.settings),
+                          tooltip: "设置",
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                    child: _ProfileHeader(),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
+                    child: Text(
+                      "季度统计",
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _QuarterChart(rows: quarterRows),
+                        const SizedBox(height: 12),
+                        _QuarterTable(rows: quarterRows),
+                      ],
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                    child: Text(
+                      "年度统计",
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Column(
+                      children: [
+                        _YearChart(rows: yearRows),
+                        const SizedBox(height: 12),
+                        _YearTable(rows: yearRows),
+                      ],
+                    ),
+                  ),
+                ),
+                const SliverToBoxAdapter(
+                  child: SizedBox(height: 32),
                 ),
               ],
             ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-                child: _ProfileHeader(),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-                child: Text(
-                  "季度统计",
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    _QuarterChart(
-                      rows: const [
-                        _TableRowData("2026 Q1", 2680, 1920, 760),
-                        _TableRowData("2025 Q4", 4220, 2510, 1710),
-                        _TableRowData("2025 Q3", 3180, 2090, 1090),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _QuarterTable(),
-                  ],
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                child: Text(
-                  "年度统计",
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    _YearChart(
-                      rows: const [
-                        _TableRowData("2026", 2680, 1920, 760),
-                        _TableRowData("2025", 14200, 9250, 4950),
-                        _TableRowData("2024", 11680, 8420, 3260),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    _YearTable(),
-                  ],
-                ),
-              ),
-            ),
-            const SliverToBoxAdapter(
-              child: SizedBox(height: 32),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
+}
+
+class _PeriodKey {
+  const _PeriodKey(this.year, this.index, this.label);
+
+  final int year;
+  final int index;
+  final String label;
+
+  @override
+  bool operator ==(Object other) {
+    return other is _PeriodKey && other.year == year && other.index == index;
+  }
+
+  @override
+  int get hashCode => Object.hash(year, index);
+}
+
+class _StatAggregate {
+  int income = 0;
+  int expense = 0;
+
+  void add(int amount) {
+    if (amount >= 0) {
+      income += amount;
+    } else {
+      expense += amount.abs();
+    }
+  }
+
+  int get balance => income - expense;
+}
+
+List<_TableRowData> _buildQuarterRows(List<RenqingRecord> records) {
+  final map = <_PeriodKey, _StatAggregate>{};
+  for (final record in records) {
+    final date = record.date;
+    final quarter = ((date.month - 1) ~/ 3) + 1;
+    final key = _PeriodKey(date.year, quarter, "${date.year} Q$quarter");
+    final agg = map.putIfAbsent(key, () => _StatAggregate());
+    agg.add(record.amount);
+  }
+
+  final keys = map.keys.toList()
+    ..sort((a, b) {
+      if (a.year != b.year) return b.year.compareTo(a.year);
+      return b.index.compareTo(a.index);
+    });
+
+  final rows = keys
+      .map(
+        (key) {
+          final agg = map[key]!;
+          return _TableRowData(key.label, agg.income, agg.expense, agg.balance);
+        },
+      )
+      .toList();
+
+  return rows.take(3).toList();
+}
+
+List<_TableRowData> _buildYearRows(List<RenqingRecord> records) {
+  final map = <_PeriodKey, _StatAggregate>{};
+  for (final record in records) {
+    final year = record.date.year;
+    final key = _PeriodKey(year, 0, "$year");
+    final agg = map.putIfAbsent(key, () => _StatAggregate());
+    agg.add(record.amount);
+  }
+
+  final keys = map.keys.toList()
+    ..sort((a, b) => b.year.compareTo(a.year));
+
+  final rows = keys
+      .map(
+        (key) {
+          final agg = map[key]!;
+          return _TableRowData(key.label, agg.income, agg.expense, agg.balance);
+        },
+      )
+      .toList();
+
+  return rows.take(3).toList();
 }
 
 class _ProfileHeader extends StatelessWidget {
@@ -219,14 +301,12 @@ class _InfoRow extends StatelessWidget {
 }
 
 class _QuarterTable extends StatelessWidget {
+  const _QuarterTable({required this.rows});
+
+  final List<_TableRowData> rows;
+
   @override
   Widget build(BuildContext context) {
-    final rows = [
-      _TableRowData("2026 Q1", 2680, 1920, 760),
-      _TableRowData("2025 Q4", 4220, 2510, 1710),
-      _TableRowData("2025 Q3", 3180, 2090, 1090),
-    ];
-
     return _StatTable(rows: rows);
   }
 }
@@ -294,14 +374,12 @@ class _QuarterChart extends StatelessWidget {
 }
 
 class _YearTable extends StatelessWidget {
+  const _YearTable({required this.rows});
+
+  final List<_TableRowData> rows;
+
   @override
   Widget build(BuildContext context) {
-    final rows = [
-      _TableRowData("2026", 2680, 1920, 760),
-      _TableRowData("2025", 14200, 9250, 4950),
-      _TableRowData("2024", 11680, 8420, 3260),
-    ];
-
     return _StatTable(rows: rows);
   }
 }
@@ -650,81 +728,93 @@ class _StatTable extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            ...rows.asMap().entries.map(
-              (entry) {
-                final index = entry.key;
-                final row = entry.value;
-                final isLast = index == rows.length - 1;
+            if (rows.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Text(
+                  "暂无数据",
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: const Color(0xFF6B5A60),
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              )
+            else
+              ...rows.asMap().entries.map(
+                (entry) {
+                  final index = entry.key;
+                  final row = entry.value;
+                  final isLast = index == rows.length - 1;
 
-                return Container(
-                  margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: index.isEven
-                        ? Colors.transparent
-                        : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          row.period,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          "￥${row.income}",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: const Color(0xFF198754),
-                                fontWeight: FontWeight.w600,
-                              ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Expanded(
-                        child: Text(
-                          "￥${row.expense}",
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: const Color(0xFFB02A37),
-                                fontWeight: FontWeight.w600,
-                              ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: row.balance >= 0
-                                ? const Color(0xFF198754).withValues(alpha: 0.1)
-                                : const Color(0xFFB02A37).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                  return Container(
+                    margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
+                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: index.isEven
+                          ? Colors.transparent
+                          : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
                           child: Text(
-                            "￥${row.balance}",
+                            row.period,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: row.balance >= 0
-                                      ? const Color(0xFF198754)
-                                      : const Color(0xFFB02A37),
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w600,
                                 ),
                             textAlign: TextAlign.center,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
+                        Expanded(
+                          child: Text(
+                            "￥${row.income}",
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: const Color(0xFF198754),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            "￥${row.expense}",
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: const Color(0xFFB02A37),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: row.balance >= 0
+                                  ? const Color(0xFF198754).withValues(alpha: 0.1)
+                                  : const Color(0xFFB02A37).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "￥${row.balance}",
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: row.balance >= 0
+                                        ? const Color(0xFF198754)
+                                        : const Color(0xFFB02A37),
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
           ],
         ),
       ),
