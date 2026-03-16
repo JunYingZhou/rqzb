@@ -1,6 +1,8 @@
 import "package:isar/isar.dart";
 import "package:path_provider/path_provider.dart";
 
+import "gift_record.dart";
+import "person.dart";
 import "renqing_record.dart";
 
 class IsarDb {
@@ -18,7 +20,7 @@ class IsarDb {
     if (_instance != null) return;
     final dir = await getApplicationDocumentsDirectory();
     _instance = await Isar.open(
-      [RenqingRecordSchema],
+      [RenqingRecordSchema, PersonSchema, GiftRecordSchema],
       directory: dir.path,
     );
   }
