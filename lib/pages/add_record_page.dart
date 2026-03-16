@@ -95,6 +95,16 @@ class _AddRecordPageState extends State<AddRecordPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final surfaceCard = colorScheme.surfaceContainerHighest;
+    final subtleShadow = BoxShadow(
+      color: colorScheme.shadow.withValues(alpha: isDark ? 0.28 : 0.08),
+      blurRadius: 10,
+      offset: const Offset(0, 3),
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -137,15 +147,9 @@ class _AddRecordPageState extends State<AddRecordPage> {
                 const SizedBox(height: 12),
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: surfaceCard,
                     borderRadius: BorderRadius.circular(16),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Color(0x0A000000),
-                        blurRadius: 8,
-                        offset: Offset(0, 2),
-                      ),
-                    ],
+                    boxShadow: [subtleShadow],
                   ),
                   child: SegmentedButton<String>(
                     segments: const [
@@ -171,6 +175,22 @@ class _AddRecordPageState extends State<AddRecordPage> {
                       setState(() => _type = value.first);
                     },
                     style: ButtonStyle(
+                      backgroundColor: WidgetStateProperty.resolveWith(
+                        (states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return colorScheme.primaryContainer;
+                          }
+                          return surfaceCard;
+                        },
+                      ),
+                      foregroundColor: WidgetStateProperty.resolveWith(
+                        (states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return colorScheme.onPrimaryContainer;
+                          }
+                          return colorScheme.onSurfaceVariant;
+                        },
+                      ),
                       shape: WidgetStateProperty.all(
                         RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -247,22 +267,16 @@ class _AddRecordPageState extends State<AddRecordPage> {
                         "常用场合",
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
-                              color: const Color(0xFF6B5A60),
+                              color: colorScheme.onSurfaceVariant,
                             ),
                       ),
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: surfaceCard,
                           borderRadius: BorderRadius.circular(16),
-                          boxShadow: const [
-                            BoxShadow(
-                              color: Color(0x0A000000),
-                              blurRadius: 8,
-                              offset: Offset(0, 2),
-                            ),
-                          ],
+                          boxShadow: [subtleShadow],
                         ),
                         child: Wrap(
                           spacing: 8,
@@ -331,22 +345,16 @@ class _AddRecordPageState extends State<AddRecordPage> {
                         child: Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: surfaceCard,
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x0A000000),
-                                blurRadius: 8,
-                                offset: Offset(0, 2),
-                              ),
-                            ],
+                            boxShadow: [subtleShadow],
                           ),
                           child: Row(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.calendar_today,
                                 size: 20,
-                                color: Color(0xFF6B5A60),
+                                color: colorScheme.onSurfaceVariant,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -359,7 +367,7 @@ class _AddRecordPageState extends State<AddRecordPage> {
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(
-                                            color: const Color(0xFF6B5A60),
+                                            color: colorScheme.onSurfaceVariant,
                                             fontWeight: FontWeight.w500,
                                           ),
                                     ),
@@ -376,10 +384,10 @@ class _AddRecordPageState extends State<AddRecordPage> {
                                   ],
                                 ),
                               ),
-                              const Icon(
+                              Icon(
                                 Icons.arrow_forward_ios,
                                 size: 16,
-                                color: Color(0xFF6B5A60),
+                                color: colorScheme.onSurfaceVariant,
                               ),
                             ],
                           ),
@@ -478,31 +486,41 @@ class _EnhancedTextFormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final fieldColor = colorScheme.surfaceContainerHighest;
+    final shadow = BoxShadow(
+      color: colorScheme.shadow.withValues(alpha: isDark ? 0.28 : 0.08),
+      blurRadius: 10,
+      offset: const Offset(0, 3),
+    );
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: fieldColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
+        boxShadow: [shadow],
       ),
       child: TextFormField(
         controller: controller,
         decoration: InputDecoration(
           labelText: labelText,
           hintText: hintText,
-          prefixIcon: prefixIcon != null ? Icon(prefixIcon, size: 20) : null,
+          prefixIcon: prefixIcon != null
+              ? Icon(
+                  prefixIcon,
+                  size: 20,
+                  color: colorScheme.onSurfaceVariant,
+                )
+              : null,
           suffixText: suffixText,
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: fieldColor,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 16,
@@ -532,17 +550,21 @@ class _EnhancedDropdownFormField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+    final fieldColor = colorScheme.surfaceContainerHighest;
+    final shadow = BoxShadow(
+      color: colorScheme.shadow.withValues(alpha: isDark ? 0.28 : 0.08),
+      blurRadius: 10,
+      offset: const Offset(0, 3),
+    );
+
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: fieldColor,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ],
+        boxShadow: [shadow],
       ),
       child: DropdownButtonFormField<T>(
         value: value,
@@ -553,7 +575,7 @@ class _EnhancedDropdownFormField<T> extends StatelessWidget {
             borderSide: BorderSide.none,
           ),
           filled: true,
-          fillColor: Colors.white,
+          fillColor: fieldColor,
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 16,
             vertical: 16,
@@ -579,20 +601,23 @@ class _EnhancedChoiceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       child: ChoiceChip(
         label: Text(
           label,
           style: TextStyle(
-            color: selected ? Colors.white : const Color(0xFF6B5A60),
+            color: selected
+                ? colorScheme.onPrimary
+                : colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w500,
           ),
         ),
         selected: selected,
         onSelected: onSelected,
-        backgroundColor: Colors.grey.shade100,
-        selectedColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: colorScheme.surfaceContainerHigh,
+        selectedColor: colorScheme.primary,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
         ),
