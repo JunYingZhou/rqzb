@@ -267,15 +267,10 @@ class _RecordPageState extends State<RecordPage> {
       stream: RecordRepository.watchAll(),
       builder: (context, snapshot) {
         final records = snapshot.data ?? const <RenqingRecord>[];
-        final now = DateTime.now();
-        final monthRecords = records.where(
-          (record) =>
-              record.date.year == now.year && record.date.month == now.month,
-        );
-        final income = monthRecords
+        final income = records
             .where((record) => record.amount >= 0)
             .fold<int>(0, (sum, record) => sum + record.amount);
-        final expense = monthRecords
+        final expense = records
             .where((record) => record.amount < 0)
             .fold<int>(0, (sum, record) => sum + record.amount.abs());
 
