@@ -1,4 +1,5 @@
 import "package:flutter/material.dart";
+
 import "../routes.dart";
 import "settings_drawer.dart";
 
@@ -19,7 +20,11 @@ class ShellScaffold extends StatelessWidget {
   void _onDestinationSelected(BuildContext context, int index) {
     if (index == currentIndex) return;
 
-    final target = index == 0 ? AppRoutes.records : AppRoutes.profile;
+    final target = switch (index) {
+      0 => AppRoutes.records,
+      1 => AppRoutes.contacts,
+      _ => AppRoutes.profile,
+    };
     Navigator.of(context).pushReplacementNamed(target);
   }
 
@@ -40,6 +45,11 @@ class ShellScaffold extends StatelessWidget {
             label: "记录",
           ),
           NavigationDestination(
+            icon: Icon(Icons.people_outline),
+            selectedIcon: Icon(Icons.people),
+            label: "联系人",
+          ),
+          NavigationDestination(
             icon: Icon(Icons.person_outline),
             selectedIcon: Icon(Icons.person),
             label: "我的",
@@ -49,4 +59,3 @@ class ShellScaffold extends StatelessWidget {
     );
   }
 }
-

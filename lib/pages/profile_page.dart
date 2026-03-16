@@ -16,7 +16,7 @@ class ProfilePage extends StatelessWidget {
         final yearRows = _buildYearRows(records);
 
         return ShellScaffold(
-          currentIndex: 1,
+          currentIndex: 2,
           child: SafeArea(
             child: CustomScrollView(
               slivers: [

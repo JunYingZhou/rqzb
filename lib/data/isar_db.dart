@@ -40,3 +40,23 @@ class RecordRepository {
     });
   }
 }
+
+class PersonRepository {
+  static Stream<List<Person>> watchAll() {
+    return IsarDb.instance.persons.where().watch(fireImmediately: true);
+  }
+
+  static Future<void> add(Person person) async {
+    person.updatedAt = DateTime.now();
+    await IsarDb.instance.writeTxn(() async {
+      await IsarDb.instance.persons.put(person);
+    });
+  }
+
+  static Future<void> deleteByIds(List<Id> ids) async {
+    if (ids.isEmpty) return;
+    await IsarDb.instance.writeTxn(() async {
+      await IsarDb.instance.persons.deleteAll(ids);
+    });
+  }
+}
