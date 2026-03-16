@@ -34,6 +34,19 @@ class RecordRepository {
         .watch(fireImmediately: true);
   }
 
+  static Stream<List<RenqingRecord>> watchByName(String name) {
+    final normalizedName = name.trim();
+    if (normalizedName.isEmpty) {
+      return Stream.value(const <RenqingRecord>[]);
+    }
+
+    return IsarDb.instance.renqingRecords
+        .filter()
+        .nameEqualTo(normalizedName)
+        .sortByDateDesc()
+        .watch(fireImmediately: true);
+  }
+
   static Future<void> add(RenqingRecord record) async {
     await IsarDb.instance.writeTxn(() async {
       await IsarDb.instance.renqingRecords.put(record);

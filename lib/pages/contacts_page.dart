@@ -4,6 +4,7 @@ import "package:isar/isar.dart";
 
 import "../data/isar_db.dart";
 import "../data/person.dart";
+import "../data/renqing_record.dart";
 import "../widgets/shell_scaffold.dart";
 
 class ContactsPage extends StatefulWidget {
@@ -33,6 +34,15 @@ class _ContactsPageState extends State<ContactsPage> {
       builder: (_) => _AddContactDialog(
         onSaved: _showSnackBar,
       ),
+    );
+  }
+
+  Future<void> _showContactDetails(Person person) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => _ContactDetailSheet(person: person),
     );
   }
 
@@ -298,6 +308,7 @@ class _ContactsPageState extends State<ContactsPage> {
                                 section: section,
                                 selectedIds: _selectedIds,
                                 onToggleSelection: _toggleSelection,
+                                onShowDetails: _showContactDetails,
                               );
                             },
                             childCount: sections.length,
@@ -457,11 +468,13 @@ class _ContactSectionView extends StatelessWidget {
     required this.section,
     required this.selectedIds,
     required this.onToggleSelection,
+    required this.onShowDetails,
   });
 
   final _ContactSection section;
   final Set<Id> selectedIds;
   final ValueChanged<Id> onToggleSelection;
+  final ValueChanged<Person> onShowDetails;
 
   @override
   Widget build(BuildContext context) {
@@ -487,8 +500,12 @@ class _ContactSectionView extends StatelessWidget {
                 borderRadius: BorderRadius.circular(18),
                 onLongPress: () => onToggleSelection(person.id),
                 onTap: () {
-                  if (selectedIds.isEmpty) return;
-                  onToggleSelection(person.id);
+                  if (selectedIds.isNotEmpty) {
+                    onToggleSelection(person.id);
+                    return;
+                  }
+
+                  onShowDetails(person);
                 },
                 child: Ink(
                   decoration: BoxDecoration(
@@ -602,6 +619,371 @@ class _ContactSectionView extends StatelessWidget {
     final trimmed = name.trim();
     if (trimmed.isEmpty) return "?";
     return trimmed[0].toUpperCase();
+  }
+}
+
+enum _RecordRange {
+  all("全部"),
+  recentOneYear("近一年"),
+  recentTwoYears("近两年");
+
+  const _RecordRange(this.label);
+
+  final String label;
+}
+
+class _ContactDetailSheet extends StatefulWidget {
+  const _ContactDetailSheet({
+    required this.person,
+  });
+
+  final Person person;
+
+  @override
+  State<_ContactDetailSheet> createState() => _ContactDetailSheetState();
+}
+
+class _ContactDetailSheetState extends State<_ContactDetailSheet> {
+  _RecordRange _selectedRange = _RecordRange.all;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: 20,
+          right: 20,
+          top: 8,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+        ),
+        child: StreamBuilder<List<RenqingRecord>>(
+          stream: RecordRepository.watchByName(widget.person.name),
+          builder: (context, snapshot) {
+            final allRecords = snapshot.data ?? const <RenqingRecord>[];
+            final records = _filterRecords(allRecords, _selectedRange);
+            final sentTotal = records
+                .where((record) => record.amount < 0)
+                .fold<int>(0, (sum, record) => sum + record.amount.abs());
+            final receivedTotal = records
+                .where((record) => record.amount > 0)
+                .fold<int>(0, (sum, record) => sum + record.amount);
+            final theyOweMe = sentTotal > receivedTotal
+                ? sentTotal - receivedTotal
+                : 0;
+            final iOweThem = receivedTotal > sentTotal
+                ? receivedTotal - sentTotal
+                : 0;
+
+            return SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 24,
+                        backgroundColor: colorScheme.primary.withValues(
+                          alpha: 0.12,
+                        ),
+                        child: Text(
+                          _avatarText(widget.person.name),
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.person.name,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: [
+                                if (widget.person.relation != null)
+                                  _MetaChip(text: widget.person.relation!),
+                                if (widget.person.phone != null)
+                                  _MetaChip(text: widget.person.phone!),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (widget.person.note != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      widget.person.note!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  Text(
+                    "往来范围",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _RecordRange.values.map((range) {
+                      final isSelected = range == _selectedRange;
+                      return ChoiceChip(
+                        label: Text(range.label),
+                        selected: isSelected,
+                        onSelected: (_) {
+                          setState(() => _selectedRange = range);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SummaryCard(
+                          title: "他差我多少",
+                          amount: theyOweMe,
+                          tint: const Color(0xFF2E7D32),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SummaryCard(
+                          title: "我差他多少",
+                          amount: iOweThem,
+                          tint: const Color(0xFFB26A00),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _SummaryCard(
+                          title: "我随礼合计",
+                          amount: sentTotal,
+                          tint: colorScheme.primary,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _SummaryCard(
+                          title: "我收礼合计",
+                          amount: receivedTotal,
+                          tint: colorScheme.secondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "往来记录",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  if (records.isEmpty)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surfaceContainerHighest.withValues(
+                          alpha: 0.5,
+                        ),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Text(
+                        "当前范围内还没有往来记录",
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    )
+                  else
+                    ...records.map(
+                      (record) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _RecordHistoryCard(record: record),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  List<RenqingRecord> _filterRecords(
+    List<RenqingRecord> records,
+    _RecordRange range,
+  ) {
+    if (range == _RecordRange.all) {
+      return records;
+    }
+
+    final now = DateTime.now();
+    final start = range == _RecordRange.recentOneYear
+        ? DateTime(now.year - 1, now.month, now.day)
+        : DateTime(now.year - 2, now.month, now.day);
+
+    return records.where((record) => !record.date.isBefore(start)).toList();
+  }
+
+  String _avatarText(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return "?";
+    return trimmed[0].toUpperCase();
+  }
+}
+
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.title,
+    required this.amount,
+    required this.tint,
+  });
+
+  final String title;
+  final int amount;
+  final Color tint;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      decoration: BoxDecoration(
+        color: tint.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: tint.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "￥$amount",
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  color: tint,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RecordHistoryCard extends StatelessWidget {
+  const _RecordHistoryCard({
+    required this.record,
+  });
+
+  final RenqingRecord record;
+
+  @override
+  Widget build(BuildContext context) {
+    final isReceived = record.amount > 0;
+    final tint = isReceived ? const Color(0xFFB26A00) : const Color(0xFF2E7D32);
+    final tagText = isReceived ? "收礼" : "随礼";
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.42),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: tint.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              tagText,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: tint,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  record.occasion,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _formatDate(record.date),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+                if (record.note != null && record.note!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    record.note!,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            "${isReceived ? "+" : "-"}￥${record.amount.abs()}",
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: tint,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return "${date.year}-${date.month.toString().padLeft(2, "0")}-${date.day.toString().padLeft(2, "0")}";
   }
 }
 
