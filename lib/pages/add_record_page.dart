@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 
 import "../data/isar_db.dart";
 import "../data/person.dart";
+import "../data/record_occasion.dart";
 import "../data/renqing_record.dart";
 
 class AddRecordPage extends StatefulWidget {
@@ -17,24 +18,15 @@ class _AddRecordPageState extends State<AddRecordPage> {
   final _manualNameController = TextEditingController();
   final _manualRelationController = TextEditingController();
   final _manualPhoneController = TextEditingController();
-  final _occasionController = TextEditingController();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
 
   String _type = "收礼";
   DateTime _date = DateTime.now();
   bool _isManualEntry = false;
+  bool _showOccasionError = false;
   Person? _selectedPerson;
-
-  static const _occasionOptions = [
-    "婚礼",
-    "满月",
-    "乔迁",
-    "寿宴",
-    "升学",
-    "开业",
-    "白事",
-  ];
+  RecordOccasion? _selectedOccasion;
 
   @override
   void dispose() {
@@ -42,7 +34,6 @@ class _AddRecordPageState extends State<AddRecordPage> {
     _manualNameController.dispose();
     _manualRelationController.dispose();
     _manualPhoneController.dispose();
-    _occasionController.dispose();
     _amountController.dispose();
     _noteController.dispose();
     super.dispose();
@@ -62,13 +53,22 @@ class _AddRecordPageState extends State<AddRecordPage> {
   }
 
   Future<void> _saveRecord() async {
+    final selectedOccasion = _selectedOccasion;
+    if (selectedOccasion == null) {
+      setState(() => _showOccasionError = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("请选择场合")),
+      );
+      return;
+    }
+
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final amountValue = int.parse(_amountController.text.trim());
     final normalizedAmount = _type == "收礼" ? amountValue : -amountValue;
     final record = RenqingRecord()
       ..type = _type
-      ..occasion = _occasionController.text.trim()
+      ..occasion = selectedOccasion.label
       ..amount = normalizedAmount
       ..date = _date
       ..note = _noteController.text.trim().isEmpty
@@ -401,16 +401,16 @@ class _AddRecordPageState extends State<AddRecordPage> {
                             child: Wrap(
                               spacing: 8,
                               runSpacing: 8,
-                              children: _occasionOptions
+                              children: RecordOccasion.values
                                   .map(
                                     (option) => _EnhancedChoiceChip(
-                                      label: option,
-                                      selected:
-                                          _occasionController.text == option,
+                                      label: option.label,
+                                      selected: _selectedOccasion == option,
                                       onSelected: (selected) {
                                         setState(() {
-                                          _occasionController.text =
-                                              selected ? option : "";
+                                          _selectedOccasion =
+                                              selected ? option : null;
+                                          _showOccasionError = false;
                                         });
                                       },
                                     ),
@@ -418,20 +418,15 @@ class _AddRecordPageState extends State<AddRecordPage> {
                                   .toList(),
                             ),
                           ),
-                          const SizedBox(height: 16),
-                          _EnhancedTextFormField(
-                            controller: _occasionController,
-                            labelText: "场合",
-                            hintText: "例如：婚礼/满月",
-                            textInputAction: TextInputAction.next,
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return "请输入场合";
-                              }
-                              return null;
-                            },
-                            prefixIcon: Icons.event_outlined,
-                          ),
+                          if (_showOccasionError) ...[
+                            const SizedBox(height: 12),
+                            Text(
+                              "请选择场合",
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.error,
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),

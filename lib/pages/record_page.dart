@@ -5,9 +5,20 @@ import "package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import "package:image_cropper/image_cropper.dart";
 import "package:image_picker/image_picker.dart";
 import "../data/isar_db.dart";
+import "../data/record_occasion.dart";
 import "../data/renqing_record.dart";
 import "../routes.dart";
 import "../widgets/shell_scaffold.dart";
+
+class _OcrContextDraft {
+  const _OcrContextDraft({
+    required this.occasion,
+    required this.date,
+  });
+
+  final RecordOccasion occasion;
+  final DateTime date;
+}
 
 class RecordPage extends StatefulWidget {
   const RecordPage({super.key});
@@ -23,6 +34,7 @@ class _RecordPageState extends State<RecordPage> {
   late final TextRecognizer _textRecognizer;
   final List<File> _selectedImages = [];
   final List<String> _ocrResults = [];
+  _OcrContextDraft? _ocrContext;
   bool _isProcessing = false;
 
   @override
@@ -37,6 +49,143 @@ class _RecordPageState extends State<RecordPage> {
     super.dispose();
   }
 
+  Future<void> _startOcrFlow() async {
+    if (_isProcessing) return;
+    if (_selectedImages.length >= _maxImages) {
+      _showSnackBar("最多只能识别$_maxImages张图片");
+      return;
+    }
+
+    final ocrContext = await _showOcrContextDialog();
+    if (!mounted || ocrContext == null) return;
+
+    setState(() => _ocrContext = ocrContext);
+
+    await _showPickOptions();
+  }
+
+  Future<_OcrContextDraft?> _showOcrContextDialog() async {
+    final draft = _ocrContext;
+    RecordOccasion? selectedOccasion = draft?.occasion;
+    var selectedDate = draft?.date ?? DateTime.now();
+    var showOccasionError = false;
+
+    return showDialog<_OcrContextDraft>(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            return AlertDialog(
+              title: const Text("填写本次识别信息"),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "场合",
+                        style: Theme.of(dialogContext).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: RecordOccasion.values.map((option) {
+                          return ChoiceChip(
+                            label: Text(option.label),
+                            selected: selectedOccasion == option,
+                            onSelected: (_) {
+                              setDialogState(() {
+                                selectedOccasion = option;
+                                showOccasionError = false;
+                              });
+                            },
+                          );
+                        }).toList(),
+                      ),
+                      if (showOccasionError) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          "请选择场合",
+                          style: Theme.of(dialogContext)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                                color: Theme.of(dialogContext).colorScheme.error,
+                              ),
+                        ),
+                      ],
+                      const SizedBox(height: 16),
+                      Text(
+                        "日期",
+                        style: Theme.of(dialogContext).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 8),
+                      InkWell(
+                        onTap: () async {
+                          final picked = await showDatePicker(
+                            context: dialogContext,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2010),
+                            lastDate: DateTime(2100),
+                          );
+
+                          if (picked != null) {
+                            setDialogState(() => selectedDate = picked);
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: InputDecorator(
+                          decoration: const InputDecoration(
+                            prefixIcon: Icon(Icons.calendar_today_outlined),
+                            border: OutlineInputBorder(),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(_formatDate(selectedDate)),
+                              ),
+                              const Icon(Icons.arrow_drop_down),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text("取消"),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final occasion = selectedOccasion;
+                    if (occasion == null) {
+                      setDialogState(() => showOccasionError = true);
+                      return;
+                    }
+
+                    Navigator.of(dialogContext).pop(
+                      _OcrContextDraft(
+                        occasion: occasion,
+                        date: selectedDate,
+                      ),
+                    );
+                  },
+                  child: const Text("下一步"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   Future<void> _showPickOptions() async {
     if (_isProcessing) return;
     if (_selectedImages.length >= _maxImages) {
@@ -48,10 +197,28 @@ class _RecordPageState extends State<RecordPage> {
       context: context,
       showDragHandle: true,
       builder: (context) {
+        final draft = _ocrContext;
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              if (draft != null) ...[
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${draft.occasion.label} · ${_formatDate(draft.date)}",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: const Color(0xFF6B5A60),
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+              ],
               ListTile(
                 leading: const Icon(Icons.photo_camera),
                 title: const Text("拍照识别"),
@@ -196,6 +363,7 @@ class _RecordPageState extends State<RecordPage> {
     showDialog<void>(
       context: context,
       builder: (context) {
+        final draft = _ocrContext;
         return AlertDialog(
           title: const Text("OCR识别结果"),
           content: SizedBox(
@@ -204,6 +372,15 @@ class _RecordPageState extends State<RecordPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (draft != null) ...[
+                    Text(
+                      "${draft.occasion.label} · ${_formatDate(draft.date)}",
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: const Color(0xFF6B5A60),
+                          ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   if (results.isEmpty)
                     const Text("未识别到文本")
                   else
@@ -277,7 +454,7 @@ class _RecordPageState extends State<RecordPage> {
         return ShellScaffold(
           currentIndex: 0,
           floatingActionButton: FloatingActionButton.extended(
-            onPressed: _isProcessing ? null : _showPickOptions,
+            onPressed: _isProcessing ? null : _startOcrFlow,
             icon: const Icon(Icons.document_scanner_outlined),
             label: const Text("OCR识别"),
           ),
@@ -854,24 +1031,7 @@ class _RecordTileState extends State<_RecordTile>
   }
 
   IconData _getCategoryIcon(String category) {
-    switch (category) {
-      case "婚礼":
-        return Icons.favorite;
-      case "满月":
-        return Icons.child_care;
-      case "乔迁":
-        return Icons.home;
-      case "寿宴":
-        return Icons.cake;
-      case "升学":
-        return Icons.school;
-      case "开业":
-        return Icons.business;
-      case "白事":
-        return Icons.church;
-      default:
-        return Icons.event;
-    }
+    return recordOccasionFromLabel(category)?.icon ?? Icons.event;
   }
 }
 
