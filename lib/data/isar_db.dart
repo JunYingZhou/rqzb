@@ -53,6 +53,14 @@ class RecordRepository {
     });
   }
 
+  static Future<void> addAll(List<RenqingRecord> records) async {
+    if (records.isEmpty) return;
+
+    await IsarDb.instance.writeTxn(() async {
+      await IsarDb.instance.renqingRecords.putAll(records);
+    });
+  }
+
   static Future<bool> updateAmount({
     required Id id,
     required int amount,
@@ -103,6 +111,39 @@ class PersonRepository {
     person.updatedAt = DateTime.now();
     await IsarDb.instance.writeTxn(() async {
       await IsarDb.instance.persons.put(person);
+    });
+  }
+
+  static Future<void> ensureNames(Iterable<String> names) async {
+    final normalizedNames = names
+        .map((name) => name.trim())
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    if (normalizedNames.isEmpty) return;
+
+    final missing = <String>[];
+    for (final name in normalizedNames) {
+      final exists = await findByName(name);
+      if (exists == null) {
+        missing.add(name);
+      }
+    }
+
+    if (missing.isEmpty) return;
+
+    final createdAt = DateTime.now();
+    final persons = missing.map((name) {
+      return Person()
+        ..name = name
+        ..relation = null
+        ..phone = null
+        ..note = null
+        ..createdAt = createdAt
+        ..updatedAt = createdAt;
+    }).toList(growable: false);
+
+    await IsarDb.instance.writeTxn(() async {
+      await IsarDb.instance.persons.putAll(persons);
     });
   }
 

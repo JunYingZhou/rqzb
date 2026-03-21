@@ -7,6 +7,8 @@ import "package:image_picker/image_picker.dart";
 import "../data/isar_db.dart";
 import "../data/record_occasion.dart";
 import "../data/renqing_record.dart";
+import "../ocr/ledger_page_parser.dart";
+import "ocr_import_preview_page.dart";
 import "../routes.dart";
 import "../theme/semantic_colors.dart";
 import "../widgets/edit_record_amount_dialog.dart";
@@ -16,10 +18,12 @@ class _OcrContextDraft {
   const _OcrContextDraft({
     required this.occasion,
     required this.date,
+    required this.type,
   });
 
   final RecordOccasion occasion;
   final DateTime date;
+  final String type;
 }
 
 class RecordPage extends StatefulWidget {
@@ -35,7 +39,6 @@ class _RecordPageState extends State<RecordPage> {
   final ImagePicker _picker = ImagePicker();
   late final TextRecognizer _textRecognizer;
   final List<File> _selectedImages = [];
-  final List<String> _ocrResults = [];
   _OcrContextDraft? _ocrContext;
   bool _isProcessing = false;
 
@@ -70,6 +73,7 @@ class _RecordPageState extends State<RecordPage> {
     final draft = _ocrContext;
     RecordOccasion? selectedOccasion = draft?.occasion;
     var selectedDate = draft?.date ?? DateTime.now();
+    var selectedType = draft?.type ?? "收礼";
     var showOccasionError = false;
 
     return showDialog<_OcrContextDraft>(
@@ -176,6 +180,7 @@ class _RecordPageState extends State<RecordPage> {
                       _OcrContextDraft(
                         occasion: occasion,
                         date: selectedDate,
+                        type: selectedType,
                       ),
                     );
                   },
@@ -313,28 +318,62 @@ class _RecordPageState extends State<RecordPage> {
   Future<void> _runOcr(List<File> images) async {
     if (_isProcessing) return;
 
-    setState(() => _isProcessing = true);
+    final draft = _ocrContext;
+    if (draft == null) {
+      _showSnackBar("请先补充本次识别信息");
+      return;
+    }
+
+    setState(() {
+      _isProcessing = true;
+      _selectedImages
+        ..clear()
+        ..addAll(images);
+    });
     _showProcessingDialog();
 
-    final List<String> results = [];
-    for (final image in images) {
-      final inputImage = InputImage.fromFile(image);
-      final recognizedText = await _textRecognizer.processImage(inputImage);
-      results.add(recognizedText.text.trim());
+    final parseResults = <OcrLedgerParseResult>[];
+    Object? error;
+
+    try {
+      for (var index = 0; index < images.length; index++) {
+        final inputImage = InputImage.fromFile(images[index]);
+        final recognizedText = await _textRecognizer.processImage(inputImage);
+        parseResults.add(
+          LedgerPageParser.parseRecognizedText(
+            recognizedText,
+            pageIndex: index + 1,
+          ),
+        );
+      }
+    } catch (exception) {
+      error = exception;
+    } finally {
+      if (mounted) {
+        Navigator.of(context, rootNavigator: true).pop();
+        setState(() => _isProcessing = false);
+      }
     }
 
     if (!mounted) return;
-    Navigator.of(context, rootNavigator: true).pop();
 
-    setState(() {
-      _isProcessing = false;
-      _selectedImages.addAll(images);
-      _ocrResults
-        ..clear()
-        ..addAll(results);
-    });
+    if (error != null) {
+      setState(() => _selectedImages.clear());
+      _showSnackBar("OCR识别失败，请重试");
+      return;
+    }
 
-    _showOcrResults(results);
+    final importedCount = await _openOcrImportPreview(
+      parseResults,
+      draft: draft,
+    );
+
+    if (!mounted) return;
+    setState(() => _selectedImages.clear());
+
+    if (importedCount != null && importedCount > 0) {
+      _showSnackBar("已导入 $importedCount 条记录");
+    }
   }
 
   void _showProcessingDialog() {
@@ -359,6 +398,7 @@ class _RecordPageState extends State<RecordPage> {
     );
   }
 
+  // ignore: unused_element
   void _showOcrResults(List<String> results) {
     showDialog<void>(
       context: context,
@@ -415,6 +455,22 @@ class _RecordPageState extends State<RecordPage> {
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<int?> _openOcrImportPreview(
+    List<OcrLedgerParseResult> parseResults, {
+    required _OcrContextDraft draft,
+  }) {
+    return Navigator.of(context).push<int>(
+      MaterialPageRoute(
+        builder: (_) => OcrImportPreviewPage(
+          parseResults: parseResults,
+          occasion: draft.occasion,
+          date: draft.date,
+          type: draft.type,
+        ),
+      ),
     );
   }
 
