@@ -52,6 +52,20 @@ class RecordRepository {
       await IsarDb.instance.renqingRecords.put(record);
     });
   }
+
+  static Future<bool> updateAmount({
+    required Id id,
+    required int amount,
+  }) async {
+    final record = await IsarDb.instance.renqingRecords.get(id);
+    if (record == null) return false;
+
+    record.amount = amount;
+    await IsarDb.instance.writeTxn(() async {
+      await IsarDb.instance.renqingRecords.put(record);
+    });
+    return true;
+  }
 }
 
 class ContactDeletePreview {

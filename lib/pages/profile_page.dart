@@ -1,6 +1,7 @@
-﻿import "package:flutter/material.dart";
+import "package:flutter/material.dart";
 import "../data/isar_db.dart";
 import "../data/renqing_record.dart";
+import "../theme/semantic_colors.dart";
 import "../widgets/shell_scaffold.dart";
 
 class ProfilePage extends StatelessWidget {
@@ -142,14 +143,12 @@ List<_TableRowData> _buildQuarterRows(List<RenqingRecord> records) {
       return b.index.compareTo(a.index);
     });
 
-  final rows = keys
-      .map(
-        (key) {
-          final agg = map[key]!;
-          return _TableRowData(key.label, agg.income, agg.expense, agg.balance);
-        },
-      )
-      .toList();
+  final rows = keys.map(
+    (key) {
+      final agg = map[key]!;
+      return _TableRowData(key.label, agg.income, agg.expense, agg.balance);
+    },
+  ).toList();
 
   return rows.take(3).toList();
 }
@@ -163,17 +162,14 @@ List<_TableRowData> _buildYearRows(List<RenqingRecord> records) {
     agg.add(record.amount);
   }
 
-  final keys = map.keys.toList()
-    ..sort((a, b) => b.year.compareTo(a.year));
+  final keys = map.keys.toList()..sort((a, b) => b.year.compareTo(a.year));
 
-  final rows = keys
-      .map(
-        (key) {
-          final agg = map[key]!;
-          return _TableRowData(key.label, agg.income, agg.expense, agg.balance);
-        },
-      )
-      .toList();
+  final rows = keys.map(
+    (key) {
+      final agg = map[key]!;
+      return _TableRowData(key.label, agg.income, agg.expense, agg.balance);
+    },
+  ).toList();
 
   return rows.take(3).toList();
 }
@@ -230,9 +226,10 @@ class _ProfileHeader extends StatelessWidget {
                   children: [
                     Text(
                       "张小六?",
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
                     ),
                     const SizedBox(height: 8),
                     _InfoRow(
@@ -249,7 +246,8 @@ class _ProfileHeader extends StatelessWidget {
               ),
               Container(
                 decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                  color: colorScheme.surfaceContainerHighest
+                      .withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: IconButton(
@@ -329,11 +327,11 @@ class _QuarterChart extends StatelessWidget {
               items: const [
                 _LegendItem(
                   label: "收入",
-                  color: Color(0xFF198754),
+                  color: receivedSemanticColor,
                 ),
                 _LegendItem(
                   label: "支出",
-                  color: Color(0xFFB02A37),
+                  color: sentSemanticColor,
                 ),
               ],
             ),
@@ -343,8 +341,8 @@ class _QuarterChart extends StatelessWidget {
               child: CustomPaint(
                 painter: _GroupedBarChartPainter(
                   rows: rows,
-                  incomeColor: const Color(0xFF198754),
-                  expenseColor: const Color(0xFFB02A37),
+                  incomeColor: receivedSemanticColor,
+                  expenseColor: sentSemanticColor,
                 ),
                 size: Size.infinite,
               ),
@@ -679,7 +677,10 @@ class _StatTable extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                color: Theme.of(context)
+                    .colorScheme
+                    .surfaceContainerHighest
+                    .withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
@@ -748,11 +749,15 @@ class _StatTable extends StatelessWidget {
 
                   return Container(
                     margin: EdgeInsets.only(bottom: isLast ? 0 : 8),
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                    padding:
+                        const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
                     decoration: BoxDecoration(
                       color: index.isEven
                           ? Colors.transparent
-                          : Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.2),
+                          : Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
+                              .withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Row(
@@ -760,7 +765,10 @@ class _StatTable extends StatelessWidget {
                         Expanded(
                           child: Text(
                             row.period,
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
                                   fontWeight: FontWeight.w600,
                                 ),
                             textAlign: TextAlign.center,
@@ -769,8 +777,11 @@ class _StatTable extends StatelessWidget {
                         Expanded(
                           child: Text(
                             "￥${row.income}",
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: const Color(0xFF198754),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: receivedSemanticColor,
                                   fontWeight: FontWeight.w600,
                                 ),
                             textAlign: TextAlign.center,
@@ -779,8 +790,11 @@ class _StatTable extends StatelessWidget {
                         Expanded(
                           child: Text(
                             "￥${row.expense}",
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: const Color(0xFFB02A37),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: sentSemanticColor,
                                   fontWeight: FontWeight.w600,
                                 ),
                             textAlign: TextAlign.center,
@@ -794,16 +808,19 @@ class _StatTable extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: row.balance >= 0
-                                  ? const Color(0xFF198754).withValues(alpha: 0.1)
-                                  : const Color(0xFFB02A37).withValues(alpha: 0.1),
+                                  ? receivedSemanticColor.withValues(alpha: 0.1)
+                                  : sentSemanticColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
                               "￥${row.balance}",
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
                                     color: row.balance >= 0
-                                        ? const Color(0xFF198754)
-                                        : const Color(0xFFB02A37),
+                                        ? receivedSemanticColor
+                                        : sentSemanticColor,
                                     fontWeight: FontWeight.w700,
                                   ),
                               textAlign: TextAlign.center,

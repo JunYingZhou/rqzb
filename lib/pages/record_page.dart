@@ -8,6 +8,8 @@ import "../data/isar_db.dart";
 import "../data/record_occasion.dart";
 import "../data/renqing_record.dart";
 import "../routes.dart";
+import "../theme/semantic_colors.dart";
+import "../widgets/edit_record_amount_dialog.dart";
 import "../widgets/shell_scaffold.dart";
 
 class _OcrContextDraft {
@@ -434,6 +436,27 @@ class _RecordPageState extends State<RecordPage> {
     return record.relationship;
   }
 
+  Future<void> _editRecordAmount(RenqingRecord record) async {
+    final updatedAbsoluteAmount = await showEditRecordAmountDialog(
+      context: context,
+      record: record,
+    );
+    if (!mounted || updatedAbsoluteAmount == null) return;
+
+    final nextAmount = record.amount.isNegative
+        ? -updatedAbsoluteAmount
+        : updatedAbsoluteAmount;
+    if (nextAmount == record.amount) return;
+
+    final didUpdate = await RecordRepository.updateAmount(
+      id: record.id,
+      amount: nextAmount,
+    );
+    if (!mounted) return;
+
+    _showSnackBar(didUpdate ? "金额已更新" : "记录不存在，无法更新");
+  }
+
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
@@ -488,7 +511,7 @@ class _RecordPageState extends State<RecordPage> {
                               child: _StatCard(
                                 label: "收礼",
                                 value: _formatAmount(income),
-                                highlight: colorScheme.primaryContainer,
+                                highlight: receivedSemanticColor,
                                 icon: Icons.call_received,
                               ),
                             ),
@@ -497,7 +520,7 @@ class _RecordPageState extends State<RecordPage> {
                               child: _StatCard(
                                 label: "随礼",
                                 value: _formatAmount(expense),
-                                highlight: colorScheme.secondaryContainer,
+                                highlight: sentSemanticColor,
                                 icon: Icons.call_made,
                               ),
                             ),
@@ -634,6 +657,7 @@ class _RecordPageState extends State<RecordPage> {
                               date: _formatDate(record.date),
                               amount: record.amount,
                               note: record.note,
+                              onEdit: () => _editRecordAmount(record),
                             ),
                           );
                         },
@@ -899,6 +923,7 @@ class _RecordTile extends StatelessWidget {
     required this.date,
     required this.amount,
     this.note,
+    required this.onEdit,
   });
 
   final String name;
@@ -907,14 +932,14 @@ class _RecordTile extends StatelessWidget {
   final String date;
   final int amount;
   final String? note;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isIncome = amount >= 0;
-    final amountColor =
-        isIncome ? const Color(0xFF198754) : const Color(0xFFB02A37);
+    final amountColor = isIncome ? receivedSemanticColor : sentSemanticColor;
     final amountText = "${isIncome ? "+" : "-"}￥${amount.abs()}";
     final noteText = note?.trim();
     final surface = colorScheme.surfaceContainerHighest.withValues(
@@ -1096,10 +1121,12 @@ class _RecordTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Icon(
-                      isIncome ? Icons.trending_up : Icons.trending_down,
+                    IconButton(
+                      onPressed: onEdit,
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      tooltip: "修改金额",
+                      visualDensity: VisualDensity.compact,
                       color: amountColor,
-                      size: 16,
                     ),
                   ],
                 ),

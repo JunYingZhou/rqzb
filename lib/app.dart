@@ -2,6 +2,7 @@ import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
 import "routes.dart";
 import "state/app_settings.dart";
+import "theme/semantic_colors.dart";
 
 class RenqingLedgerApp extends ConsumerWidget {
   const RenqingLedgerApp({super.key});
@@ -13,8 +14,8 @@ class RenqingLedgerApp extends ConsumerWidget {
     final isDark = brightness == Brightness.dark;
 
     final semanticColors = {
-      "income": const Color(0xFF198754),
-      "expense": const Color(0xFFB02A37),
+      "income": receivedSemanticColor,
+      "expense": sentSemanticColor,
       "neutral": isDark ? const Color(0xFFB8AEB2) : const Color(0xFF6B5A60),
       "surface": isDark ? const Color(0xFF140E11) : const Color(0xFFF7F4F6),
       "onSurface": isDark ? const Color(0xFFF2EAF0) : const Color(0xFF1B0A0F),
