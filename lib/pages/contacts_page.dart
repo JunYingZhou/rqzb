@@ -5,6 +5,7 @@ import "package:isar/isar.dart";
 import "../data/isar_db.dart";
 import "../data/person.dart";
 import "../data/renqing_record.dart";
+import "../theme/semantic_colors.dart";
 import "../widgets/shell_scaffold.dart";
 
 // Heuristic index labels for Chinese names.
@@ -1024,7 +1025,7 @@ class _ContactDetailSheetState extends State<_ContactDetailSheet> {
                         child: _SummaryCard(
                           title: "他差我多少",
                           amount: theyOweMe,
-                          tint: const Color(0xFF2E7D32),
+                          tint: receivedSemanticColor,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1032,7 +1033,7 @@ class _ContactDetailSheetState extends State<_ContactDetailSheet> {
                         child: _SummaryCard(
                           title: "我差他多少",
                           amount: iOweThem,
-                          tint: const Color(0xFFB26A00),
+                          tint: sentSemanticColor,
                         ),
                       ),
                     ],
@@ -1044,7 +1045,7 @@ class _ContactDetailSheetState extends State<_ContactDetailSheet> {
                         child: _SummaryCard(
                           title: "我随礼合计",
                           amount: sentTotal,
-                          tint: colorScheme.primary,
+                          tint: sentSemanticColor,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -1052,7 +1053,7 @@ class _ContactDetailSheetState extends State<_ContactDetailSheet> {
                         child: _SummaryCard(
                           title: "我收礼合计",
                           amount: receivedTotal,
-                          tint: colorScheme.secondary,
+                          tint: receivedSemanticColor,
                         ),
                       ),
                     ],
@@ -1174,7 +1175,7 @@ class _RecordHistoryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isReceived = record.amount > 0;
-    final tint = isReceived ? const Color(0xFFB26A00) : const Color(0xFF2E7D32);
+    final tint = isReceived ? receivedSemanticColor : sentSemanticColor;
     final tagText = isReceived ? "收礼" : "随礼";
 
     return Container(

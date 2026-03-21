@@ -8,6 +8,7 @@ import "../data/isar_db.dart";
 import "../data/record_occasion.dart";
 import "../data/renqing_record.dart";
 import "../routes.dart";
+import "../theme/semantic_colors.dart";
 import "../widgets/shell_scaffold.dart";
 
 class _OcrContextDraft {
@@ -488,7 +489,7 @@ class _RecordPageState extends State<RecordPage> {
                               child: _StatCard(
                                 label: "收礼",
                                 value: _formatAmount(income),
-                                highlight: colorScheme.primaryContainer,
+                                highlight: receivedSemanticColor,
                                 icon: Icons.call_received,
                               ),
                             ),
@@ -497,7 +498,7 @@ class _RecordPageState extends State<RecordPage> {
                               child: _StatCard(
                                 label: "随礼",
                                 value: _formatAmount(expense),
-                                highlight: colorScheme.secondaryContainer,
+                                highlight: sentSemanticColor,
                                 icon: Icons.call_made,
                               ),
                             ),
@@ -913,8 +914,7 @@ class _RecordTile extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isIncome = amount >= 0;
-    final amountColor =
-        isIncome ? const Color(0xFF198754) : const Color(0xFFB02A37);
+    final amountColor = isIncome ? receivedSemanticColor : sentSemanticColor;
     final amountText = "${isIncome ? "+" : "-"}￥${amount.abs()}";
     final noteText = note?.trim();
     final surface = colorScheme.surfaceContainerHighest.withValues(
