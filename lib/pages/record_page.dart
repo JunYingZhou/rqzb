@@ -1,4 +1,4 @@
-﻿import "dart:io";
+import "dart:io";
 
 import "package:flutter/material.dart";
 import "package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart";
@@ -113,7 +113,8 @@ class _RecordPageState extends State<RecordPage> {
                               .textTheme
                               .bodySmall
                               ?.copyWith(
-                                color: Theme.of(dialogContext).colorScheme.error,
+                                color:
+                                    Theme.of(dialogContext).colorScheme.error,
                               ),
                         ),
                       ],
@@ -331,9 +332,6 @@ class _RecordPageState extends State<RecordPage> {
         ..addAll(results);
     });
 
-    // 打印
-    print(results);
-
     _showOcrResults(results);
   }
 
@@ -508,7 +506,8 @@ class _RecordPageState extends State<RecordPage> {
                         const SizedBox(height: 16),
                         _QuickActions(
                           onAdd: () {
-                            Navigator.of(context).pushNamed(AppRoutes.addRecord);
+                            Navigator.of(context)
+                                .pushNamed(AppRoutes.addRecord);
                           },
                           onImport: () {},
                           onExport: () {},
@@ -519,10 +518,35 @@ class _RecordPageState extends State<RecordPage> {
                 ),
                 SliverToBoxAdapter(
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
-                    child: Text(
-                      "最近记录",
-                      style: Theme.of(context).textTheme.titleMedium,
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            "最近记录",
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest
+                                .withValues(alpha: 0.55),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            "${records.length} 条",
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -533,41 +557,89 @@ class _RecordPageState extends State<RecordPage> {
                         horizontal: 20,
                         vertical: 24,
                       ),
-                      child: Card(
-                        elevation: 0,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .surfaceContainerHighest
-                            .withValues(alpha: 0.5),
-                        child: Padding(
-                          padding: const EdgeInsets.all(20),
-                          child: Text(
-                            "还没有记录，先新增一条吧。",
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: const Color(0xFF6B5A60),
-                                ),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: colorScheme.surfaceContainerHighest
+                              .withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: colorScheme.outlineVariant
+                                .withValues(alpha: 0.25),
                           ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              width: 44,
+                              height: 44,
+                              decoration: BoxDecoration(
+                                color:
+                                    colorScheme.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Icon(
+                                Icons.receipt_long_outlined,
+                                color: colorScheme.primary,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "还没有记录",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleMedium
+                                        ?.copyWith(fontWeight: FontWeight.w700),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    "先新增一条，首页会自动更新最近记录。",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                          color: colorScheme.onSurfaceVariant,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
                   )
                 else
-                  SliverList.separated(
-                    itemCount: records.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) {
-                      final record = records[index];
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: _RecordTile(
-                          name: record.name,
-                          category: record.occasion,
-                          relationship: _relationshipLabel(record),
-                          date: _formatDate(record.date),
-                          amount: record.amount,
-                        ),
-                      );
-                    },
+                  SliverPadding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                    sliver: SliverList(
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final record = records[index];
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: index == records.length - 1 ? 0 : 12,
+                            ),
+                            child: _RecordTile(
+                              key: ValueKey(record.id),
+                              name: record.name,
+                              category: record.occasion,
+                              relationship: _relationshipLabel(record),
+                              date: _formatDate(record.date),
+                              amount: record.amount,
+                              note: record.note,
+                            ),
+                          );
+                        },
+                        childCount: records.length,
+                      ),
+                    ),
                   ),
                 const SliverToBoxAdapter(
                   child: SizedBox(height: 32),
@@ -699,10 +771,11 @@ class _StatCardState extends State<_StatCard>
                       const SizedBox(height: 8),
                       Text(
                         widget.value,
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                              color: const Color(0xFF1B0A0F),
-                              fontWeight: FontWeight.w700,
-                            ),
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: const Color(0xFF1B0A0F),
+                                  fontWeight: FontWeight.w700,
+                                ),
                       ),
                     ],
                   ),
@@ -817,13 +890,15 @@ class _ActionButtonState extends State<_ActionButton> {
   }
 }
 
-class _RecordTile extends StatefulWidget {
+class _RecordTile extends StatelessWidget {
   const _RecordTile({
+    super.key,
     required this.name,
     required this.category,
     required this.relationship,
     required this.date,
     required this.amount,
+    this.note,
   });
 
   final String name;
@@ -831,202 +906,208 @@ class _RecordTile extends StatefulWidget {
   final String relationship;
   final String date;
   final int amount;
-
-  @override
-  State<_RecordTile> createState() => _RecordTileState();
-}
-
-class _RecordTileState extends State<_RecordTile>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _slideAnimation;
-  late Animation<double> _fadeAnimation;
-  bool _isPressed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 400),
-      vsync: this,
-    );
-
-    _slideAnimation = Tween<double>(
-      begin: 50.0,
-      end: 0.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOut,
-    ));
-
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
+  final String? note;
 
   @override
   Widget build(BuildContext context) {
-    final isIncome = widget.amount >= 0;
-    final amountText = "${isIncome ? "+" : "-"}￥${widget.amount.abs()}";
-    final amountColor = isIncome
-        ? const Color(0xFF198754)
-        : const Color(0xFFB02A37);
+    final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isIncome = amount >= 0;
+    final amountColor =
+        isIncome ? const Color(0xFF198754) : const Color(0xFFB02A37);
+    final amountText = "${isIncome ? "+" : "-"}￥${amount.abs()}";
+    final noteText = note?.trim();
+    final surface = colorScheme.surfaceContainerHighest.withValues(
+      alpha: isDark ? 0.42 : 0.28,
+    );
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Transform.translate(
-          offset: Offset(_slideAnimation.value, 0),
-          child: Opacity(
-            opacity: _fadeAnimation.value,
-            child: GestureDetector(
-              onTapDown: (_) => setState(() => _isPressed = true),
-              onTapUp: (_) => setState(() => _isPressed = false),
-              onTapCancel: () => setState(() => _isPressed = false),
-              child: AnimatedScale(
-                scale: _isPressed ? 0.98 : 1.0,
-                duration: const Duration(milliseconds: 150),
-                child: Card(
-                  elevation: _isPressed ? 4 : 1,
-                  shadowColor: const Color(0x1A000000),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: isIncome
-                            ? const Color(0xFF198754).withValues(alpha: 0.1)
-                            : const Color(0xFFB02A37).withValues(alpha: 0.1),
-                        width: 1,
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.22 : 0.06),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        color: surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.35),
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                surface,
+                isIncome
+                    ? amountColor.withValues(alpha: 0.05)
+                    : colorScheme.surface,
+              ],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: amountColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    _getCategoryIcon(category),
+                    color: amountColor,
+                    size: 26,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        crossAxisAlignment: WrapCrossAlignment.center,
                         children: [
                           Container(
-                            width: 48,
-                            height: 48,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
                             decoration: BoxDecoration(
                               color: amountColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
+                              borderRadius: BorderRadius.circular(999),
                             ),
-                            child: Icon(
-                              _getCategoryIcon(widget.category),
-                              color: amountColor,
-                              size: 24,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  widget.name,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 2,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .surfaceContainerHighest
-                                            .withValues(alpha: 0.5),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        widget.relationship,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodySmall
-                                            ?.copyWith(
-                                              color: const Color(0xFF6B5A60),
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w500,
-                                            ),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      widget.category,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .bodyMedium
-                                          ?.copyWith(
-                                            color: const Color(0xFF6B5A60),
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  widget.date,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.copyWith(
-                                        color: const Color(0xFF6B5A60),
-                                      ),
-                                ),
-                              ],
+                            child: Text(
+                              relationship,
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: amountColor,
+                                    fontWeight: FontWeight.w600,
+                                  ),
                             ),
                           ),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                amountText,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(
+                          Text(
+                            category,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodyMedium
+                                ?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.event_outlined,
+                            size: 14,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            date,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                    ),
+                          ),
+                        ],
+                      ),
+                      if (noteText != null && noteText.isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        Text(
+                          noteText,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                  ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: amountColor.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            amountText,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: amountColor,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isIncome ? "收礼" : "随礼",
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: amountColor,
-                                      fontWeight: FontWeight.w700,
+                                      fontWeight: FontWeight.w600,
                                     ),
-                              ),
-                              const SizedBox(height: 4),
-                              Icon(
-                                isIncome
-                                    ? Icons.trending_up
-                                    : Icons.trending_down,
-                                color: amountColor,
-                                size: 16,
-                              ),
-                            ],
                           ),
                         ],
                       ),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+                    Icon(
+                      isIncome ? Icons.trending_up : Icons.trending_down,
+                      color: amountColor,
+                      size: 16,
+                    ),
+                  ],
                 ),
-              ),
+              ],
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -1034,4 +1115,3 @@ class _RecordTileState extends State<_RecordTile>
     return recordOccasionFromLabel(category)?.icon ?? Icons.event;
   }
 }
-

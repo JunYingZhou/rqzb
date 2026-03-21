@@ -7,6 +7,178 @@ import "../data/person.dart";
 import "../data/renqing_record.dart";
 import "../widgets/shell_scaffold.dart";
 
+// Heuristic index labels for Chinese names.
+// We keep this local to the page so the rest of the app does not need to know
+// about display-only grouping rules.
+const Map<String, String> _compoundSurnameInitials = {
+  "欧阳": "O",
+  "司马": "S",
+  "上官": "S",
+  "诸葛": "Z",
+  "司徒": "S",
+  "夏侯": "X",
+  "拓跋": "T",
+  "端木": "D",
+  "独孤": "D",
+  "南宫": "N",
+  "长孙": "C",
+  "尉迟": "Y",
+  "令狐": "L",
+  "慕容": "M",
+  "宇文": "Y",
+  "闻人": "W",
+  "皇甫": "H",
+  "公孙": "G",
+  "仲孙": "Z",
+  "轩辕": "X",
+  "百里": "B",
+  "东郭": "D",
+  "西门": "X",
+  "申屠": "S",
+  "公羊": "G",
+  "羊舌": "Y",
+  "漆雕": "Q",
+  "壤驷": "R",
+  "公冶": "G",
+  "宗政": "Z",
+  "濮阳": "P",
+  "淳于": "C",
+  "单于": "C",
+  "太叔": "T",
+  "公良": "G",
+  "仲长": "Z",
+  "子书": "Z",
+  "子桑": "Z",
+  "即墨": "J",
+  "达奚": "D",
+  "褚师": "C",
+  "谷梁": "G",
+};
+
+const Map<String, String> _singleCharacterInitials = {
+  "阿": "A",
+  "艾": "A",
+  "安": "A",
+  "敖": "A",
+  "巴": "B",
+  "白": "B",
+  "鲍": "B",
+  "毕": "B",
+  "卞": "B",
+  "蔡": "C",
+  "曹": "C",
+  "岑": "C",
+  "常": "C",
+  "陈": "C",
+  "成": "C",
+  "程": "C",
+  "崔": "C",
+  "戴": "D",
+  "单": "D",
+  "邓": "D",
+  "丁": "D",
+  "董": "D",
+  "杜": "D",
+  "段": "D",
+  "樊": "F",
+  "范": "F",
+  "方": "F",
+  "冯": "F",
+  "傅": "F",
+  "甘": "G",
+  "高": "G",
+  "葛": "G",
+  "龚": "G",
+  "谷": "G",
+  "顾": "G",
+  "郭": "G",
+  "韩": "H",
+  "何": "H",
+  "贺": "H",
+  "洪": "H",
+  "侯": "H",
+  "胡": "H",
+  "黄": "H",
+  "贾": "J",
+  "姜": "J",
+  "江": "J",
+  "金": "J",
+  "康": "K",
+  "柯": "K",
+  "孔": "K",
+  "赖": "L",
+  "蓝": "L",
+  "雷": "L",
+  "黎": "L",
+  "李": "L",
+  "梁": "L",
+  "林": "L",
+  "刘": "L",
+  "柳": "L",
+  "卢": "L",
+  "陆": "L",
+  "罗": "L",
+  "吕": "L",
+  "马": "M",
+  "毛": "M",
+  "孟": "M",
+  "莫": "M",
+  "倪": "N",
+  "宁": "N",
+  "欧": "O",
+  "彭": "P",
+  "钱": "Q",
+  "秦": "Q",
+  "邱": "Q",
+  "丘": "Q",
+  "任": "R",
+  "饶": "R",
+  "沈": "S",
+  "宋": "S",
+  "孙": "S",
+  "谭": "T",
+  "唐": "T",
+  "田": "T",
+  "童": "T",
+  "汪": "W",
+  "王": "W",
+  "韦": "W",
+  "魏": "W",
+  "吴": "W",
+  "武": "W",
+  "夏": "X",
+  "萧": "X",
+  "肖": "X",
+  "谢": "X",
+  "徐": "X",
+  "许": "X",
+  "薛": "X",
+  "严": "Y",
+  "颜": "Y",
+  "杨": "Y",
+  "姚": "Y",
+  "叶": "Y",
+  "尹": "Y",
+  "于": "Y",
+  "余": "Y",
+  "袁": "Y",
+  "岳": "Y",
+  "曾": "Z",
+  "翟": "Z",
+  "詹": "Z",
+  "张": "Z",
+  "赵": "Z",
+  "郑": "Z",
+  "周": "Z",
+  "朱": "Z",
+  "庄": "Z",
+  "宗": "Z",
+  "左": "Z",
+  "小": "X",
+  "大": "D",
+  "老": "L",
+};
+
 class ContactsPage extends StatefulWidget {
   const ContactsPage({super.key});
 
@@ -210,14 +382,63 @@ class _ContactsPageState extends State<ContactsPage> {
   }
 
   String _sectionLabelFor(String name) {
-    final trimmed = name.trim();
-    if (trimmed.isEmpty) return "#";
-    final first = trimmed[0].toUpperCase();
-    final code = first.codeUnitAt(0);
-    if (code >= 65 && code <= 90) {
-      return first;
+    final normalized = name.trim();
+    if (normalized.isEmpty) return "#";
+
+    final compoundInitial = _compoundSurnameInitial(normalized);
+    if (compoundInitial != null) {
+      return compoundInitial;
     }
-    return "#";
+
+    final seed = _firstIndexSeed(normalized);
+    if (seed == null) return "#";
+
+    final rune = seed.runes.first;
+    if (_isAsciiLetter(rune)) {
+      return String.fromCharCode(rune).toUpperCase();
+    }
+    if (_isDigit(rune)) {
+      return "#";
+    }
+
+    return _singleCharacterInitials[seed] ?? "#";
+  }
+
+  String? _compoundSurnameInitial(String normalizedName) {
+    for (final entry in _compoundSurnameInitials.entries) {
+      if (normalizedName.startsWith(entry.key)) {
+        return entry.value;
+      }
+    }
+    return null;
+  }
+
+  String? _firstIndexSeed(String text) {
+    for (final rune in text.runes) {
+      if (_isAsciiLetter(rune) || _isDigit(rune) || _isChineseIdeograph(rune)) {
+        return String.fromCharCode(rune);
+      }
+    }
+    return null;
+  }
+
+  bool _isAsciiLetter(int rune) {
+    return (rune >= 65 && rune <= 90) || (rune >= 97 && rune <= 122);
+  }
+
+  bool _isDigit(int rune) {
+    return rune >= 48 && rune <= 57;
+  }
+
+  bool _isChineseIdeograph(int rune) {
+    return (rune >= 0x4E00 && rune <= 0x9FFF) ||
+        (rune >= 0x3400 && rune <= 0x4DBF) ||
+        (rune >= 0xF900 && rune <= 0xFAFF) ||
+        (rune >= 0x20000 && rune <= 0x2A6DF) ||
+        (rune >= 0x2A700 && rune <= 0x2B73F) ||
+        (rune >= 0x2B740 && rune <= 0x2B81F) ||
+        (rune >= 0x2B820 && rune <= 0x2CEAF) ||
+        (rune >= 0x2F800 && rune <= 0x2FA1F);
   }
 
   void _showSnackBar(String message) {
