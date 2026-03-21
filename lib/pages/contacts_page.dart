@@ -6,6 +6,7 @@ import "../data/isar_db.dart";
 import "../data/person.dart";
 import "../data/renqing_record.dart";
 import "../theme/semantic_colors.dart";
+import "../widgets/edit_record_amount_dialog.dart";
 import "../widgets/shell_scaffold.dart";
 
 // Heuristic index labels for Chinese names.
@@ -911,6 +912,33 @@ class _ContactDetailSheet extends StatefulWidget {
 class _ContactDetailSheetState extends State<_ContactDetailSheet> {
   _RecordRange _selectedRange = _RecordRange.all;
 
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  Future<void> _editRecordAmount(RenqingRecord record) async {
+    final updatedAbsoluteAmount = await showEditRecordAmountDialog(
+      context: context,
+      record: record,
+    );
+    if (!mounted || updatedAbsoluteAmount == null) return;
+
+    final nextAmount = record.amount.isNegative
+        ? -updatedAbsoluteAmount
+        : updatedAbsoluteAmount;
+    if (nextAmount == record.amount) return;
+
+    final didUpdate = await RecordRepository.updateAmount(
+      id: record.id,
+      amount: nextAmount,
+    );
+    if (!mounted) return;
+
+    _showSnackBar(didUpdate ? "金额已更新" : "记录不存在，无法更新");
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -1087,7 +1115,10 @@ class _ContactDetailSheetState extends State<_ContactDetailSheet> {
                     ...records.map(
                       (record) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: _RecordHistoryCard(record: record),
+                        child: _RecordHistoryCard(
+                          record: record,
+                          onEdit: () => _editRecordAmount(record),
+                        ),
                       ),
                     ),
                 ],
@@ -1159,6 +1190,13 @@ class _SummaryCard extends StatelessWidget {
                   fontWeight: FontWeight.w800,
                 ),
           ),
+          /* IconButton(
+            onPressed: null,
+            icon: const Icon(Icons.edit_outlined, size: 18),
+            tooltip: "修改金额",
+            visualDensity: VisualDensity.compact,
+            color: tint,
+          ), */
         ],
       ),
     );
@@ -1168,9 +1206,11 @@ class _SummaryCard extends StatelessWidget {
 class _RecordHistoryCard extends StatelessWidget {
   const _RecordHistoryCard({
     required this.record,
+    required this.onEdit,
   });
 
   final RenqingRecord record;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -1178,69 +1218,74 @@ class _RecordHistoryCard extends StatelessWidget {
     final tint = isReceived ? receivedSemanticColor : sentSemanticColor;
     final tagText = isReceived ? "收礼" : "随礼";
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.42),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: tint.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(999),
+    return InkWell(
+      onTap: onEdit,
+      borderRadius: BorderRadius.circular(18),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context)
+              .colorScheme
+              .surfaceContainerHighest
+              .withValues(alpha: 0.42),
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: tint.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                tagText,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: tint,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
             ),
-            child: Text(
-              tagText,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: tint,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  record.occasion,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  _formatDate(record.date),
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                ),
-                if (record.note != null && record.note!.trim().isNotEmpty) ...[
-                  const SizedBox(height: 6),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    record.note!,
-                    style: Theme.of(context).textTheme.bodyMedium,
+                    record.occasion,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                   ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatDate(record.date),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  if (record.note != null &&
+                      record.note!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      record.note!,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 8),
-          Text(
-            "${isReceived ? "+" : "-"}￥${record.amount.abs()}",
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: tint,
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-        ],
+            const SizedBox(width: 8),
+            Text(
+              "${isReceived ? "+" : "-"}￥${record.amount.abs()}",
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: tint,
+                    fontWeight: FontWeight.w800,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
