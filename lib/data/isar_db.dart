@@ -54,6 +54,20 @@ class RecordRepository {
   }
 }
 
+class ContactDeletePreview {
+  const ContactDeletePreview({
+    required this.contactCount,
+    required this.renqingRecordCount,
+    required this.giftRecordCount,
+  });
+
+  final int contactCount;
+  final int renqingRecordCount;
+  final int giftRecordCount;
+
+  int get totalRelatedRecordCount => renqingRecordCount + giftRecordCount;
+}
+
 class PersonRepository {
   static Stream<List<Person>> watchAll() {
     return IsarDb.instance.persons.where().watch(fireImmediately: true);
@@ -78,10 +92,96 @@ class PersonRepository {
     });
   }
 
+  static Future<ContactDeletePreview> previewDeleteByIds(List<Id> ids) async {
+    final persons = await _loadPersonsByIds(ids);
+    if (persons.isEmpty) {
+      return const ContactDeletePreview(
+        contactCount: 0,
+        renqingRecordCount: 0,
+        giftRecordCount: 0,
+      );
+    }
+
+    final renqingRecordIds = await _findRenqingRecordIdsByPersons(persons);
+    final giftRecordIds = await _findGiftRecordIdsByPersons(persons);
+
+    return ContactDeletePreview(
+      contactCount: persons.length,
+      renqingRecordCount: renqingRecordIds.length,
+      giftRecordCount: giftRecordIds.length,
+    );
+  }
+
   static Future<void> deleteByIds(List<Id> ids) async {
-    if (ids.isEmpty) return;
+    final persons = await _loadPersonsByIds(ids);
+    if (persons.isEmpty) return;
+
+    final personIds =
+        persons.map((person) => person.id).toList(growable: false);
+    final renqingRecordIds = await _findRenqingRecordIdsByPersons(persons);
+    final giftRecordIds = await _findGiftRecordIdsByPersons(persons);
+
     await IsarDb.instance.writeTxn(() async {
-      await IsarDb.instance.persons.deleteAll(ids);
+      if (renqingRecordIds.isNotEmpty) {
+        await IsarDb.instance.renqingRecords.deleteAll(renqingRecordIds);
+      }
+      if (giftRecordIds.isNotEmpty) {
+        await IsarDb.instance.giftRecords.deleteAll(giftRecordIds);
+      }
+      await IsarDb.instance.persons.deleteAll(personIds);
     });
+  }
+
+  static Future<List<Person>> _loadPersonsByIds(List<Id> ids) async {
+    final persons = <Person>[];
+
+    for (final id in ids.toSet()) {
+      final person = await IsarDb.instance.persons.get(id);
+      if (person != null) {
+        persons.add(person);
+      }
+    }
+
+    return persons;
+  }
+
+  static Future<List<Id>> _findRenqingRecordIdsByPersons(
+    List<Person> persons,
+  ) async {
+    // Existing renqing records are associated by contact name.
+    final names = persons
+        .map((person) => person.name.trim())
+        .where((name) => name.isNotEmpty)
+        .toSet();
+    final recordIds = <Id>{};
+
+    for (final name in names) {
+      final ids = await IsarDb.instance.renqingRecords
+          .filter()
+          .nameEqualTo(name)
+          .idProperty()
+          .findAll();
+      recordIds.addAll(ids);
+    }
+
+    return recordIds.toList(growable: false);
+  }
+
+  static Future<List<Id>> _findGiftRecordIdsByPersons(
+    List<Person> persons,
+  ) async {
+    final personIds = persons.map((person) => person.id).toSet();
+    final recordIds = <Id>{};
+
+    for (final personId in personIds) {
+      final ids = await IsarDb.instance.giftRecords
+          .filter()
+          .personIdEqualTo(personId)
+          .idProperty()
+          .findAll();
+      recordIds.addAll(ids);
+    }
+
+    return recordIds.toList(growable: false);
   }
 }

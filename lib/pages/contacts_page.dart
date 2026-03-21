@@ -52,12 +52,22 @@ class _ContactsPageState extends State<ContactsPage> {
       return;
     }
 
+    final selectedIds = _selectedIds.toList(growable: false);
+    final preview = await PersonRepository.previewDeleteByIds(selectedIds);
+    if (!mounted) return;
+
+    if (preview.contactCount == 0) {
+      setState(() => _selectedIds.clear());
+      _showSnackBar("未找到可删除的联系人");
+      return;
+    }
+
     final shouldDelete = await showDialog<bool>(
           context: context,
           builder: (context) {
             return AlertDialog(
-              title: const Text("删除联系人"),
-              content: Text("确定删除已选中的 ${_selectedIds.length} 位联系人吗？"),
+              title: const Text("删除联系人及关联记录"),
+              content: Text(_buildDeletePreviewMessage(preview)),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(false),
@@ -75,10 +85,41 @@ class _ContactsPageState extends State<ContactsPage> {
 
     if (!shouldDelete) return;
 
-    await PersonRepository.deleteByIds(_selectedIds.toList());
+    await PersonRepository.deleteByIds(selectedIds);
     if (!mounted) return;
     setState(_selectedIds.clear);
-    _showSnackBar("联系人已删除");
+    _showSnackBar(
+      preview.totalRelatedRecordCount > 0 ? "联系人及关联记录已删除" : "联系人已删除",
+    );
+  }
+
+  String _buildDeletePreviewMessage(ContactDeletePreview preview) {
+    final buffer = StringBuffer(
+      "确定删除已选中的 ${preview.contactCount} 位联系人吗？",
+    );
+
+    if (preview.totalRelatedRecordCount == 0) {
+      buffer.write("\n\n此操作不可撤销。");
+      return buffer.toString();
+    }
+
+    final detailParts = <String>[];
+    if (preview.renqingRecordCount > 0) {
+      detailParts.add("往来记录 ${preview.renqingRecordCount} 条");
+    }
+    if (preview.giftRecordCount > 0) {
+      detailParts.add("礼簿记录 ${preview.giftRecordCount} 条");
+    }
+
+    buffer
+      ..write("\n\n")
+      ..write("删除后会同时清除该联系人的全部信息记录，共 ")
+      ..write(preview.totalRelatedRecordCount)
+      ..write(" 条")
+      ..write(detailParts.isEmpty ? "" : "（${detailParts.join("，")}）")
+      ..write("，且无法恢复。");
+
+    return buffer.toString();
   }
 
   void _toggleSelection(Id id) {
@@ -540,11 +581,13 @@ class _ContactSectionView extends StatelessWidget {
                               .withValues(alpha: 0.12),
                           child: Text(
                             _avatarText(person.name),
-                            style:
-                                Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      color: Theme.of(context).colorScheme.primary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  fontWeight: FontWeight.w700,
+                                ),
                           ),
                         ),
                         const SizedBox(width: 14),
@@ -670,12 +713,10 @@ class _ContactDetailSheetState extends State<_ContactDetailSheet> {
             final receivedTotal = records
                 .where((record) => record.amount > 0)
                 .fold<int>(0, (sum, record) => sum + record.amount);
-            final theyOweMe = sentTotal > receivedTotal
-                ? sentTotal - receivedTotal
-                : 0;
-            final iOweThem = receivedTotal > sentTotal
-                ? receivedTotal - sentTotal
-                : 0;
+            final theyOweMe =
+                sentTotal > receivedTotal ? sentTotal - receivedTotal : 0;
+            final iOweThem =
+                receivedTotal > sentTotal ? receivedTotal - sentTotal : 0;
 
             return SingleChildScrollView(
               child: Column(
