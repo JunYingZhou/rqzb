@@ -1,8 +1,13 @@
+import "dart:convert";
 import "dart:io";
 
+import "package:file_picker/file_picker.dart";
 import "package:flutter/material.dart";
 import "package:image_cropper/image_cropper.dart";
 import "package:image_picker/image_picker.dart";
+import "package:path_provider/path_provider.dart";
+import "package:share_plus/share_plus.dart";
+import "../data/data_backup_service.dart";
 import "../data/isar_db.dart";
 import "../data/record_occasion.dart";
 import "../data/renqing_record.dart";
@@ -41,6 +46,7 @@ class _RecordPageState extends State<RecordPage> {
   final List<File> _selectedImages = [];
   _OcrContextDraft? _ocrContext;
   bool _isProcessing = false;
+  bool _isBackupBusy = false;
 
   @override
   void initState() {
@@ -450,6 +456,90 @@ class _RecordPageState extends State<RecordPage> {
     );
   }
 
+  Future<void> _importBackup() async {
+    if (_isProcessing || _isBackupBusy) return;
+
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: const ["json"],
+      withData: true,
+    );
+    if (result == null) return;
+
+    final file = result.files.single;
+    final bytes = file.bytes ??
+        (file.path == null ? null : await File(file.path!).readAsBytes());
+    if (bytes == null || bytes.isEmpty) {
+      _showSnackBar("\u672a\u627e\u5230\u53ef\u5bfc\u5165\u7684 JSON \u6587\u4ef6");
+      return;
+    }
+
+    setState(() => _isBackupBusy = true);
+    try {
+      final report = await DataBackupService.importJsonString(
+        utf8.decode(bytes),
+      );
+      if (!mounted) return;
+      _showSnackBar(
+        "\u5df2\u5bfc\u5165 ${report.importedPersons} \u4e2a\u8054\u7cfb\u4eba\uff0c"
+        "${report.importedRenqingRecords} \u6761\u8d26\u672c\u8bb0\u5f55\uff0c"
+        "${report.importedGiftRecords} \u6761\u5f80\u6765\u8bb0\u5f55",
+      );
+    } on FormatException catch (error) {
+      if (!mounted) return;
+      _showSnackBar(error.message);
+    } catch (_) {
+      if (!mounted) return;
+      _showSnackBar(
+        "\u5bfc\u5165\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u6587\u4ef6\u683c\u5f0f\u540e\u91cd\u8bd5",
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isBackupBusy = false);
+      }
+    }
+  }
+
+  Future<void> _exportBackup() async {
+    if (_isProcessing || _isBackupBusy) return;
+
+    setState(() => _isBackupBusy = true);
+    try {
+      final json = await DataBackupService.exportJsonString();
+      final directory = await getTemporaryDirectory();
+      final exportDir = Directory(
+        "${directory.path}${Platform.pathSeparator}exports",
+      );
+      if (!await exportDir.exists()) {
+        await exportDir.create(recursive: true);
+      }
+
+      final timestamp = _formatExportTimestamp(DateTime.now());
+      final file = File(
+        "${exportDir.path}${Platform.pathSeparator}"
+        "renqing_ledger_backup_$timestamp.json",
+      );
+      await file.writeAsString(json, flush: true);
+
+      if (!mounted) return;
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: "\u4eba\u60c5\u8d26\u672c\u6570\u636e\u5bfc\u51fa\u6587\u4ef6",
+      );
+      if (!mounted) return;
+      _showSnackBar("\u5df2\u5bfc\u51fa\u5230 ${file.path}");
+    } catch (_) {
+      if (!mounted) return;
+      _showSnackBar(
+        "\u5bfc\u51fa\u5931\u8d25\uff0c\u8bf7\u7a0d\u540e\u518d\u8bd5",
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isBackupBusy = false);
+      }
+    }
+  }
+
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
@@ -491,6 +581,18 @@ class _RecordPageState extends State<RecordPage> {
 
   String _formatDate(DateTime date) {
     return "${date.year}-${date.month.toString().padLeft(2, "0")}-${date.day.toString().padLeft(2, "0")}";
+  }
+
+  String _formatExportTimestamp(DateTime date) {
+    return [
+      date.year.toString().padLeft(4, "0"),
+      date.month.toString().padLeft(2, "0"),
+      date.day.toString().padLeft(2, "0"),
+      "_",
+      date.hour.toString().padLeft(2, "0"),
+      date.minute.toString().padLeft(2, "0"),
+      date.second.toString().padLeft(2, "0"),
+    ].join();
   }
 
   String _relationshipLabel(RenqingRecord record) {
@@ -595,12 +697,13 @@ class _RecordPageState extends State<RecordPage> {
                         ),
                         const SizedBox(height: 16),
                         _QuickActions(
+                          isBusy: _isBackupBusy,
                           onAdd: () {
                             Navigator.of(context)
                                 .pushNamed(AppRoutes.addRecord);
                           },
-                          onImport: () {},
-                          onExport: () {},
+                          onImport: _importBackup,
+                          onExport: _exportBackup,
                         ),
                       ],
                     ),
@@ -882,11 +985,13 @@ class _StatCardState extends State<_StatCard>
 
 class _QuickActions extends StatelessWidget {
   const _QuickActions({
+    required this.isBusy,
     required this.onAdd,
     required this.onImport,
     required this.onExport,
   });
 
+  final bool isBusy;
   final VoidCallback onAdd;
   final VoidCallback onImport;
   final VoidCallback onExport;
@@ -921,13 +1026,13 @@ class _QuickActions extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             _ActionButton(
-              onPressed: onImport,
+              onPressed: isBusy ? null : onImport,
               icon: Icons.file_upload_outlined,
               tooltip: "导入数据",
             ),
             const SizedBox(width: 8),
             _ActionButton(
-              onPressed: onExport,
+              onPressed: isBusy ? null : onExport,
               icon: Icons.file_download_outlined,
               tooltip: "导出数据",
             ),
@@ -945,7 +1050,7 @@ class _ActionButton extends StatefulWidget {
     required this.tooltip,
   });
 
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final IconData icon;
   final String tooltip;
 
@@ -958,12 +1063,14 @@ class _ActionButtonState extends State<_ActionButton> {
 
   @override
   Widget build(BuildContext context) {
+    final isEnabled = widget.onPressed != null;
+
     return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
+      onTapDown: isEnabled ? (_) => setState(() => _isPressed = true) : null,
+      onTapUp: isEnabled ? (_) => setState(() => _isPressed = false) : null,
+      onTapCancel: isEnabled ? () => setState(() => _isPressed = false) : null,
       child: AnimatedScale(
-        scale: _isPressed ? 0.95 : 1.0,
+        scale: isEnabled && _isPressed ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 100),
         child: IconButton.filledTonal(
           onPressed: widget.onPressed,
