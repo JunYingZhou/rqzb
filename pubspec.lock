@@ -576,6 +576,13 @@ packages:
       url: "https://mirrors.tuna.tsinghua.edu.cn/dart-pub/"
     source: hosted
     version: "2.2.0"
+  paddle_ocr:
+    dependency: "direct main"
+    description:
+      path: "packages/paddle_ocr"
+      relative: true
+    source: path
+    version: "0.0.5"
   path:
     dependency: transitive
     description:

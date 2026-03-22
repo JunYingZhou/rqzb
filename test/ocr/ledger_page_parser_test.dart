@@ -66,5 +66,53 @@ void main() {
       expect(result.entries, isEmpty);
       expect(result.unmatchedTexts, isNotEmpty);
     });
+
+    test("parses names split into single-character OCR boxes", () {
+      final result = LedgerPageParser.parseChunks(
+        [
+          const OcrTextChunk(
+            text: "王",
+            bounds: Rect.fromLTWH(920, 80, 42, 58),
+          ),
+          const OcrTextChunk(
+            text: "勇",
+            bounds: Rect.fromLTWH(920, 150, 42, 58),
+          ),
+          const OcrTextChunk(
+            text: "贺",
+            bounds: Rect.fromLTWH(920, 250, 42, 58),
+          ),
+          const OcrTextChunk(
+            text: "礼",
+            bounds: Rect.fromLTWH(920, 320, 42, 58),
+          ),
+          const OcrTextChunk(
+            text: "伍",
+            bounds: Rect.fromLTWH(920, 390, 42, 58),
+          ),
+          const OcrTextChunk(
+            text: "佰",
+            bounds: Rect.fromLTWH(920, 460, 42, 58),
+          ),
+          const OcrTextChunk(
+            text: "元",
+            bounds: Rect.fromLTWH(920, 530, 42, 58),
+          ),
+          const OcrTextChunk(
+            text: "整",
+            bounds: Rect.fromLTWH(920, 600, 42, 58),
+          ),
+          const OcrTextChunk(
+            text: "500",
+            bounds: Rect.fromLTWH(924, 676, 40, 26),
+          ),
+        ],
+        pageIndex: 3,
+      );
+
+      expect(result.entries.length, 1);
+      expect(result.entries.single.name, "王勇");
+      expect(result.entries.single.amount, 500);
+    });
   });
 }

@@ -1,12 +1,12 @@
 import "dart:io";
 
 import "package:flutter/material.dart";
-import "package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart";
 import "package:image_cropper/image_cropper.dart";
 import "package:image_picker/image_picker.dart";
 import "../data/isar_db.dart";
 import "../data/record_occasion.dart";
 import "../data/renqing_record.dart";
+import "../ocr/ledger_ocr_engine.dart";
 import "../ocr/ledger_page_parser.dart";
 import "ocr_import_preview_page.dart";
 import "../routes.dart";
@@ -37,7 +37,7 @@ class _RecordPageState extends State<RecordPage> {
   static const int _maxImages = 5;
 
   final ImagePicker _picker = ImagePicker();
-  late final TextRecognizer _textRecognizer;
+  late final LedgerOcrEngine _ocrEngine;
   final List<File> _selectedImages = [];
   _OcrContextDraft? _ocrContext;
   bool _isProcessing = false;
@@ -45,12 +45,12 @@ class _RecordPageState extends State<RecordPage> {
   @override
   void initState() {
     super.initState();
-    _textRecognizer = TextRecognizer(script: TextRecognitionScript.chinese);
+    _ocrEngine = createLedgerOcrEngine();
   }
 
   @override
   void dispose() {
-    _textRecognizer.close();
+    _ocrEngine.close();
     super.dispose();
   }
 
@@ -337,11 +337,9 @@ class _RecordPageState extends State<RecordPage> {
 
     try {
       for (var index = 0; index < images.length; index++) {
-        final inputImage = InputImage.fromFile(images[index]);
-        final recognizedText = await _textRecognizer.processImage(inputImage);
         parseResults.add(
-          LedgerPageParser.parseRecognizedText(
-            recognizedText,
+          await _ocrEngine.recognizeImage(
+            images[index],
             pageIndex: index + 1,
           ),
         );
@@ -359,7 +357,7 @@ class _RecordPageState extends State<RecordPage> {
 
     if (error != null) {
       setState(() => _selectedImages.clear());
-      _showSnackBar("OCR识别失败，请重试");
+      _showSnackBar(_ocrErrorMessage(error));
       return;
     }
 
@@ -456,6 +454,19 @@ class _RecordPageState extends State<RecordPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
+  }
+
+  String _ocrErrorMessage(Object error) {
+    if (error is UnsupportedError) {
+      return error.message?.toString() ?? "当前平台暂不支持 OCR 识别";
+    }
+    if (error is StateError) {
+      return error.message.toString();
+    }
+    if (error is FormatException) {
+      return error.message;
+    }
+    return "OCR识别失败，请重试";
   }
 
   Future<int?> _openOcrImportPreview(

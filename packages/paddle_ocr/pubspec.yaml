@@ -1,0 +1,18 @@
+name: paddle_ocr
+description: Vendored PaddleOCR plugin for Android.
+version: 0.0.5
+homepage: https://gitee.com/swzw/paddle-ocr
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
