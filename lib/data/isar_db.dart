@@ -34,6 +34,10 @@ class RecordRepository {
         .watch(fireImmediately: true);
   }
 
+  static Future<List<RenqingRecord>> loadAll() async {
+    return IsarDb.instance.renqingRecords.where().findAll();
+  }
+
   static Stream<List<RenqingRecord>> watchByName(String name) {
     final normalizedName = name.trim();
     if (normalizedName.isEmpty) {
@@ -76,6 +80,12 @@ class RecordRepository {
   }
 }
 
+class GiftRecordRepository {
+  static Future<List<GiftRecord>> loadAll() async {
+    return IsarDb.instance.giftRecords.where().findAll();
+  }
+}
+
 class ContactDeletePreview {
   const ContactDeletePreview({
     required this.contactCount,
@@ -93,6 +103,10 @@ class ContactDeletePreview {
 class PersonRepository {
   static Stream<List<Person>> watchAll() {
     return IsarDb.instance.persons.where().watch(fireImmediately: true);
+  }
+
+  static Future<List<Person>> loadAll() async {
+    return IsarDb.instance.persons.where().findAll();
   }
 
   static Future<Person?> findByName(String name) {
