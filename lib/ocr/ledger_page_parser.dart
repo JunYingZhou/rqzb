@@ -157,7 +157,9 @@ class LedgerPageParser {
 
       final sourceText = groupTexts.join(" ");
       final amount = _extractAmount(groupTexts) ?? _extractAmount([sourceText]);
-      final name = _extractName(groupTexts) ?? _extractName([sourceText]);
+      final name = _extractName(groupTexts) ??
+          _extractStructuredName(groupTexts) ??
+          _extractName([sourceText]);
 
       if (name != null && amount != null) {
         final key = "$pageIndex|$name|$amount";
@@ -337,6 +339,74 @@ class LedgerPageParser {
     }
 
     return bestCandidate?.value;
+  }
+
+  static String? _extractStructuredName(List<String> texts) {
+    if (texts.isEmpty) return null;
+
+    final normalizedTexts = texts
+        .map(_normalizeWhitespace)
+        .where((text) => text.isNotEmpty)
+        .toList(growable: false);
+    final collected = <String>[];
+    String? bestCandidate;
+
+    for (var index = 0; index < normalizedTexts.length; index++) {
+      if (_startsAmountOrMarkerSequence(normalizedTexts, index)) {
+        break;
+      }
+
+      final candidate = _normalizeNameCandidate(normalizedTexts[index]);
+      if (candidate.isEmpty) {
+        if (collected.isNotEmpty) {
+          break;
+        }
+        continue;
+      }
+
+      if (_looksLikeChineseAmountText(candidate)) {
+        break;
+      }
+
+      collected.add(candidate);
+      final joined = collected.join();
+      if (joined.length > 4) {
+        collected.removeLast();
+        break;
+      }
+
+      if (joined.length >= 2) {
+        bestCandidate = joined;
+      }
+    }
+
+    return bestCandidate;
+  }
+
+  static bool _startsAmountOrMarkerSequence(
+      List<String> texts, int startIndex) {
+    for (var length = 1; length <= 4; length++) {
+      final sample = _joinTexts(texts, startIndex, length);
+      if (sample.isEmpty) continue;
+
+      if (_nameStopwords.contains(sample)) {
+        return true;
+      }
+      if (_extractAmount([sample]) != null) {
+        return true;
+      }
+      if (_looksLikeChineseAmountText(sample)) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  static String _joinTexts(List<String> texts, int startIndex, int length) {
+    if (startIndex >= texts.length) return "";
+    final endIndex = min(texts.length, startIndex + length);
+    return texts.sublist(startIndex, endIndex).join();
   }
 
   static String _normalizeNameCandidate(String text) {
