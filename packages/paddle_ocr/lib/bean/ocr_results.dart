@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names
+
 import 'package:json_annotation/json_annotation.dart';
 
 import 'ocr_result.dart';
@@ -7,9 +9,7 @@ part 'ocr_results.g.dart';
 @JsonSerializable()
 class OcrResultInfo {
   List<OcrResult>? ocrResults;
-  /**
-   * ID_CARD,BANK_CARD,OTHER,EMPTY
-   */
+  /// ID_CARD,BANK_CARD,OTHER,EMPTY
   String? ocr_type;
 
   OcrResultInfo({this.ocrResults = const [], this.ocr_type = 'OTHER'});

@@ -232,12 +232,12 @@ class _ProfileHeader extends StatelessWidget {
                               ),
                     ),
                     const SizedBox(height: 8),
-                    _InfoRow(
+                    const _InfoRow(
                       icon: Icons.phone,
                       text: "常用手机号：138****8821",
                     ),
                     const SizedBox(height: 6),
-                    _InfoRow(
+                    const _InfoRow(
                       icon: Icons.location_on,
                       text: "当前位置：上海?",
                     ),
@@ -323,8 +323,8 @@ class _QuarterChart extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Column(
           children: [
-            _ChartLegend(
-              items: const [
+            const _ChartLegend(
+              items: [
                 _LegendItem(
                   label: "收入",
                   color: receivedSemanticColor,
@@ -396,8 +396,8 @@ class _YearChart extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
         child: Column(
           children: [
-            _ChartLegend(
-              items: const [
+            const _ChartLegend(
+              items: [
                 _LegendItem(
                   label: "结余",
                   color: Color(0xFF1B0A0F),
@@ -520,7 +520,7 @@ class _GroupedBarChartPainter extends CustomPainter {
         .toDouble()
         .clamp(1, double.infinity);
 
-    final chartPadding = const EdgeInsets.fromLTRB(8, 8, 8, 20);
+    const chartPadding = EdgeInsets.fromLTRB(8, 8, 8, 20);
     final chartWidth = size.width - chartPadding.horizontal;
     final chartHeight = size.height - chartPadding.vertical;
 
@@ -603,7 +603,7 @@ class _LineChartPainter extends CustomPainter {
     final minValue = rawMin > 0 ? 0.0 : rawMin;
     final range = (maxValue - minValue).abs() < 1 ? 1.0 : (maxValue - minValue);
 
-    final chartPadding = const EdgeInsets.fromLTRB(8, 8, 8, 20);
+    const chartPadding = EdgeInsets.fromLTRB(8, 8, 8, 20);
     final chartWidth = size.width - chartPadding.horizontal;
     final chartHeight = size.height - chartPadding.vertical;
 

@@ -66,7 +66,7 @@ class RenqingLedgerApp extends ConsumerWidget {
           letterSpacing: -0.3,
         ),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: isDark ? const Color(0xFF1E151A) : Colors.white,
         elevation: 0,
         shadowColor: semanticColors["cardShadow"],

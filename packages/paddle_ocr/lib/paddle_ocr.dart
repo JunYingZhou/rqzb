@@ -1,5 +1,8 @@
+// ignore_for_file: non_constant_identifier_names
+
 import "dart:convert";
 
+import "package:flutter/foundation.dart";
 import "package:flutter/services.dart";
 
 import "bean/ocr_results.dart";
@@ -69,7 +72,7 @@ class PaddleOcr {
 
       if (isPrint) {
         for (final element in ocrResultInfo.ocrResults ?? const []) {
-          print(element.toString());
+          debugPrint(element.toString());
         }
       }
 
