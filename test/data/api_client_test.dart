@@ -10,7 +10,7 @@ void main() {
   test("login saves token from auth response", () async {
     final tokenStore = MemoryTokenStore();
     final client = ApiClient(
-      baseUrl: Uri.parse("http://localhost:9000"),
+      baseUrl: Uri.parse("http://192.168.31.115:9000"),
       tokenStore: tokenStore,
       httpClient: MockClient((request) async {
         expect(request.method, "POST");
@@ -51,7 +51,7 @@ void main() {
   test("authorized requests include satoken header", () async {
     final tokenStore = MemoryTokenStore(initialToken: "token-123");
     final client = ApiClient(
-      baseUrl: Uri.parse("http://localhost:9000"),
+      baseUrl: Uri.parse("http://192.168.31.115:9000"),
       tokenStore: tokenStore,
       httpClient: MockClient((request) async {
         expect(request.headers["satoken"], "token-123");

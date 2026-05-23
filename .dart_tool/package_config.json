@@ -267,21 +267,21 @@
     },
     {
       "name": "image_cropper",
-      "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/image_cropper-5.0.1",
+      "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/image_cropper-9.1.0",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.3"
     },
     {
       "name": "image_cropper_for_web",
-      "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/image_cropper_for_web-3.0.0",
+      "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/image_cropper_for_web-6.1.0",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.3"
     },
     {
       "name": "image_cropper_platform_interface",
-      "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/image_cropper_platform_interface-5.0.0",
+      "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/image_cropper_platform_interface-7.2.0",
       "packageUri": "lib/",
-      "languageVersion": "2.18"
+      "languageVersion": "3.3"
     },
     {
       "name": "image_picker",
@@ -348,12 +348,6 @@
       "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/jni_flutter-1.0.1",
       "packageUri": "lib/",
       "languageVersion": "3.3"
-    },
-    {
-      "name": "js",
-      "rootUri": "file:///C:/Users/34975/AppData/Local/Pub/Cache/hosted/pub.flutter-io.cn/js-0.6.7",
-      "packageUri": "lib/",
-      "languageVersion": "2.19"
     },
     {
       "name": "json_annotation",

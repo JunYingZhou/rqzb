@@ -9,7 +9,7 @@ import "ledger_page_parser.dart";
 
 class HttpLedgerOcrEngine implements LedgerOcrEngine {
   HttpLedgerOcrEngine({
-    this.apiUrl = "http://localhost:9000/api/system/ai/analyze-image",
+    this.apiUrl = "http://192.168.31.115:9000/api/system/ai/analyze-image",
   });
 
   final String apiUrl;

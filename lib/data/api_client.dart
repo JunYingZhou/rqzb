@@ -3,7 +3,7 @@ import "dart:convert";
 import "package:http/http.dart" as http;
 import "package:shared_preferences/shared_preferences.dart";
 
-const String defaultApiBaseUrl = "http://localhost:9000";
+const String defaultApiBaseUrl = "http://192.168.31.115:9000";
 
 class ApiException implements Exception {
   const ApiException(this.message, {this.statusCode});
