@@ -387,10 +387,12 @@ class DataBackupService {
       }
     }
 
-    if (personWrites.isNotEmpty) {
-      await IsarDb.instance.writeTxn(() async {
-        await IsarDb.instance.persons.putAll(personWrites);
-      });
+    for (final person in personWrites) {
+      if (person.id > 0) {
+        await PersonRepository.update(person);
+      } else {
+        await PersonRepository.add(person);
+      }
     }
 
     final resolvedPersonsByName = <String, Person>{};
@@ -418,11 +420,7 @@ class DataBackupService {
       importedRenqingRecords++;
     }
 
-    if (renqingWrites.isNotEmpty) {
-      await IsarDb.instance.writeTxn(() async {
-        await IsarDb.instance.renqingRecords.putAll(renqingWrites);
-      });
-    }
+    await RecordRepository.addAll(renqingWrites);
 
     final existingGiftRecords = await GiftRecordRepository.loadAll();
     final giftKeys = existingGiftRecords.map(_giftSignature).toSet();
@@ -448,11 +446,7 @@ class DataBackupService {
       importedGiftRecords++;
     }
 
-    if (giftWrites.isNotEmpty) {
-      await IsarDb.instance.writeTxn(() async {
-        await IsarDb.instance.giftRecords.putAll(giftWrites);
-      });
-    }
+    await GiftRecordRepository.addAll(giftWrites);
 
     return LedgerBackupImportReport(
       importedPersons: importedPersons,

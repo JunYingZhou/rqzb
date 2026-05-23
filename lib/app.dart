@@ -1,5 +1,6 @@
 import "package:flutter/material.dart";
 import "package:flutter_riverpod/flutter_riverpod.dart";
+import "data/api_client.dart";
 import "routes.dart";
 import "state/app_settings.dart";
 import "theme/semantic_colors.dart";
@@ -121,7 +122,9 @@ class RenqingLedgerApp extends ConsumerWidget {
       theme: _buildTheme(brand: brand, brightness: Brightness.light),
       darkTheme: _buildTheme(brand: brand, brightness: Brightness.dark),
       themeMode: toThemeMode(themeMode),
-      initialRoute: AppRoutes.records,
+      initialRoute: ApiServices.client.isAuthenticated
+          ? AppRoutes.records
+          : AppRoutes.login,
       onGenerateRoute: AppRoutes.onGenerateRoute,
       builder: (context, child) {
         final mediaQuery = MediaQuery.of(context);

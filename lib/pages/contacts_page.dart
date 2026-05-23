@@ -1,6 +1,5 @@
 import "package:flutter/material.dart";
 import "package:flutter/rendering.dart";
-import "package:isar/isar.dart";
 
 import "../data/isar_db.dart";
 import "../data/person.dart";
@@ -191,7 +190,7 @@ class ContactsPage extends StatefulWidget {
 class _ContactsPageState extends State<ContactsPage> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final Set<Id> _selectedIds = <Id>{};
+  final Set<int> _selectedIds = <int>{};
   final Map<String, GlobalKey> _sectionKeys = <String, GlobalKey>{};
   String _query = "";
 
@@ -296,7 +295,7 @@ class _ContactsPageState extends State<ContactsPage> {
     return buffer.toString();
   }
 
-  void _toggleSelection(Id id) {
+  void _toggleSelection(int id) {
     setState(() {
       if (_selectedIds.contains(id)) {
         _selectedIds.remove(id);
@@ -736,8 +735,8 @@ class _ContactSectionView extends StatelessWidget {
   });
 
   final _ContactSection section;
-  final Set<Id> selectedIds;
-  final ValueChanged<Id> onToggleSelection;
+  final Set<int> selectedIds;
+  final ValueChanged<int> onToggleSelection;
   final ValueChanged<Person> onShowDetails;
 
   @override

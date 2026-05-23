@@ -1,88 +1,143 @@
-import "package:isar/isar.dart";
-import "package:path_provider/path_provider.dart";
+import "dart:async";
 
+import "api_client.dart";
 import "gift_record.dart";
 import "person.dart";
 import "renqing_record.dart";
 
 class IsarDb {
-  static Isar? _instance;
+  static void init() {}
+}
 
-  static Isar get instance {
-    final value = _instance;
-    if (value == null) {
-      throw StateError("Isar has not been initialized.");
-    }
-    return value;
-  }
+class _RepositoryRefresh {
+  static final records = StreamController<void>.broadcast();
+  static final persons = StreamController<void>.broadcast();
+  static final giftRecords = StreamController<void>.broadcast();
 
-  static Future<void> init() async {
-    if (_instance != null) return;
-    final dir = await getApplicationDocumentsDirectory();
-    _instance = await Isar.open(
-      [RenqingRecordSchema, PersonSchema, GiftRecordSchema],
-      directory: dir.path,
-    );
+  static void refreshRecords() => records.add(null);
+  static void refreshPersons() => persons.add(null);
+  static void refreshGiftRecords() => giftRecords.add(null);
+  static void refreshAll() {
+    refreshRecords();
+    refreshPersons();
+    refreshGiftRecords();
   }
 }
 
 class RecordRepository {
-  static Stream<List<RenqingRecord>> watchAll() {
-    return IsarDb.instance.renqingRecords
-        .where()
-        .sortByDateDesc()
-        .watch(fireImmediately: true);
+  static Stream<List<RenqingRecord>> watchAll() async* {
+    yield await loadAll();
+    yield* _RepositoryRefresh.records.stream.asyncMap((_) => loadAll());
   }
 
   static Future<List<RenqingRecord>> loadAll() async {
-    return IsarDb.instance.renqingRecords.where().findAll();
+    final records = await ApiServices.client.getList(
+      "/api/renqing/records/list",
+      RenqingRecord.fromJson,
+    );
+    records.sort((left, right) => right.date.compareTo(left.date));
+    return records;
   }
 
-  static Stream<List<RenqingRecord>> watchByName(String name) {
+  static Stream<List<RenqingRecord>> watchByName(String name) async* {
     final normalizedName = name.trim();
     if (normalizedName.isEmpty) {
-      return Stream.value(const <RenqingRecord>[]);
+      yield const <RenqingRecord>[];
+      return;
     }
 
-    return IsarDb.instance.renqingRecords
-        .filter()
-        .nameEqualTo(normalizedName)
-        .sortByDateDesc()
-        .watch(fireImmediately: true);
+    yield await loadByName(normalizedName);
+    yield* _RepositoryRefresh.records.stream.asyncMap(
+      (_) => loadByName(normalizedName),
+    );
   }
 
-  static Future<void> add(RenqingRecord record) async {
-    await IsarDb.instance.writeTxn(() async {
-      await IsarDb.instance.renqingRecords.put(record);
-    });
+  static Future<List<RenqingRecord>> loadByName(String name) async {
+    final records = await ApiServices.client.getList(
+      "/api/renqing/records/name/${Uri.encodeComponent(name)}",
+      RenqingRecord.fromJson,
+    );
+    records.sort((left, right) => right.date.compareTo(left.date));
+    return records;
+  }
+
+  static Future<RenqingRecord> add(RenqingRecord record) async {
+    final created = await ApiServices.client.post(
+      "/api/renqing/records",
+      body: record.toJson(),
+      fromJson: RenqingRecord.fromJson,
+    );
+    _RepositoryRefresh.refreshRecords();
+    return created;
   }
 
   static Future<void> addAll(List<RenqingRecord> records) async {
-    if (records.isEmpty) return;
-
-    await IsarDb.instance.writeTxn(() async {
-      await IsarDb.instance.renqingRecords.putAll(records);
-    });
+    for (final record in records) {
+      await add(record);
+    }
   }
 
   static Future<bool> updateAmount({
-    required Id id,
+    required int id,
     required int amount,
   }) async {
-    final record = await IsarDb.instance.renqingRecords.get(id);
-    if (record == null) return false;
+    if (id <= 0) return false;
 
-    record.amount = amount;
-    await IsarDb.instance.writeTxn(() async {
-      await IsarDb.instance.renqingRecords.put(record);
-    });
-    return true;
+    try {
+      final record = await ApiServices.client.getObject(
+        "/api/renqing/records/$id",
+        RenqingRecord.fromJson,
+      );
+      record.amount = amount;
+      await ApiServices.client.put(
+        "/api/renqing/records/$id",
+        body: record.toJson(),
+        fromJson: RenqingRecord.fromJson,
+      );
+      _RepositoryRefresh.refreshRecords();
+      return true;
+    } on ApiException {
+      return false;
+    }
+  }
+
+  static Future<void> deleteByIds(List<int> ids) async {
+    for (final id in ids.where((id) => id > 0).toSet()) {
+      await ApiServices.client.delete("/api/renqing/records/$id");
+    }
+    _RepositoryRefresh.refreshRecords();
   }
 }
 
 class GiftRecordRepository {
   static Future<List<GiftRecord>> loadAll() async {
-    return IsarDb.instance.giftRecords.where().findAll();
+    return ApiServices.client.getList(
+      "/api/renqing/gift-records/list",
+      GiftRecord.fromJson,
+    );
+  }
+
+  static Future<GiftRecord> add(GiftRecord record) async {
+    final created = await ApiServices.client.post(
+      "/api/renqing/gift-records",
+      body: record.toJson(),
+      fromJson: GiftRecord.fromJson,
+    );
+    _RepositoryRefresh.refreshGiftRecords();
+    return created;
+  }
+
+  static Future<void> addAll(List<GiftRecord> records) async {
+    for (final record in records) {
+      await add(record);
+    }
+  }
+
+  static Future<void> deleteByIds(List<int> ids) async {
+    for (final id in ids.where((id) => id > 0).toSet()) {
+      await ApiServices.client.delete("/api/renqing/gift-records/$id");
+    }
+    _RepositoryRefresh.refreshGiftRecords();
   }
 }
 
@@ -101,31 +156,54 @@ class ContactDeletePreview {
 }
 
 class PersonRepository {
-  static Stream<List<Person>> watchAll() {
-    return IsarDb.instance.persons.where().watch(fireImmediately: true);
+  static Stream<List<Person>> watchAll() async* {
+    yield await loadAll();
+    yield* _RepositoryRefresh.persons.stream.asyncMap((_) => loadAll());
   }
 
   static Future<List<Person>> loadAll() async {
-    return IsarDb.instance.persons.where().findAll();
+    return ApiServices.client.getList(
+      "/api/renqing/persons/list",
+      Person.fromJson,
+    );
   }
 
-  static Future<Person?> findByName(String name) {
+  static Future<Person?> findByName(String name) async {
     final normalizedName = name.trim();
-    if (normalizedName.isEmpty) {
-      return Future.value(null);
-    }
+    if (normalizedName.isEmpty) return null;
 
-    return IsarDb.instance.persons
-        .filter()
-        .nameEqualTo(normalizedName)
-        .findFirst();
+    final persons = await ApiServices.client.getList(
+      "/api/renqing/persons/name/${Uri.encodeComponent(normalizedName)}",
+      Person.fromJson,
+    );
+    for (final person in persons) {
+      if (person.name.trim() == normalizedName) {
+        return person;
+      }
+    }
+    return persons.isEmpty ? null : persons.first;
   }
 
-  static Future<void> add(Person person) async {
+  static Future<Person> add(Person person) async {
     person.updatedAt = DateTime.now();
-    await IsarDb.instance.writeTxn(() async {
-      await IsarDb.instance.persons.put(person);
-    });
+    final created = await ApiServices.client.post(
+      "/api/renqing/persons",
+      body: person.toJson(),
+      fromJson: Person.fromJson,
+    );
+    _RepositoryRefresh.refreshPersons();
+    return created;
+  }
+
+  static Future<Person> update(Person person) async {
+    person.updatedAt = DateTime.now();
+    final updated = await ApiServices.client.put(
+      "/api/renqing/persons/${person.id}",
+      body: person.toJson(),
+      fromJson: Person.fromJson,
+    );
+    _RepositoryRefresh.refreshPersons();
+    return updated;
   }
 
   static Future<void> ensureNames(Iterable<String> names) async {
@@ -135,33 +213,28 @@ class PersonRepository {
         .toSet();
     if (normalizedNames.isEmpty) return;
 
-    final missing = <String>[];
+    var didCreate = false;
+    final createdAt = DateTime.now();
     for (final name in normalizedNames) {
       final exists = await findByName(name);
-      if (exists == null) {
-        missing.add(name);
-      }
+      if (exists != null) continue;
+
+      await add(
+        Person(
+          name: name,
+          createdAt: createdAt,
+          updatedAt: createdAt,
+        ),
+      );
+      didCreate = true;
     }
 
-    if (missing.isEmpty) return;
-
-    final createdAt = DateTime.now();
-    final persons = missing.map((name) {
-      return Person()
-        ..name = name
-        ..relation = null
-        ..phone = null
-        ..note = null
-        ..createdAt = createdAt
-        ..updatedAt = createdAt;
-    }).toList(growable: false);
-
-    await IsarDb.instance.writeTxn(() async {
-      await IsarDb.instance.persons.putAll(persons);
-    });
+    if (didCreate) {
+      _RepositoryRefresh.refreshPersons();
+    }
   }
 
-  static Future<ContactDeletePreview> previewDeleteByIds(List<Id> ids) async {
+  static Future<ContactDeletePreview> previewDeleteByIds(List<int> ids) async {
     final persons = await _loadPersonsByIds(ids);
     if (persons.isEmpty) {
       return const ContactDeletePreview(
@@ -171,86 +244,59 @@ class PersonRepository {
       );
     }
 
-    final renqingRecordIds = await _findRenqingRecordIdsByPersons(persons);
-    final giftRecordIds = await _findGiftRecordIdsByPersons(persons);
+    final records = await RecordRepository.loadAll();
+    final gifts = await GiftRecordRepository.loadAll();
+    final names = persons.map((person) => person.name.trim()).toSet();
+    final personIds = persons.map((person) => person.id).toSet();
 
     return ContactDeletePreview(
       contactCount: persons.length,
-      renqingRecordCount: renqingRecordIds.length,
-      giftRecordCount: giftRecordIds.length,
+      renqingRecordCount: records
+          .where((record) => names.contains(record.name.trim()))
+          .length,
+      giftRecordCount:
+          gifts.where((record) => personIds.contains(record.personId)).length,
     );
   }
 
-  static Future<void> deleteByIds(List<Id> ids) async {
+  static Future<void> deleteByIds(List<int> ids) async {
     final persons = await _loadPersonsByIds(ids);
     if (persons.isEmpty) return;
 
-    final personIds =
-        persons.map((person) => person.id).toList(growable: false);
-    final renqingRecordIds = await _findRenqingRecordIdsByPersons(persons);
-    final giftRecordIds = await _findGiftRecordIdsByPersons(persons);
-
-    await IsarDb.instance.writeTxn(() async {
-      if (renqingRecordIds.isNotEmpty) {
-        await IsarDb.instance.renqingRecords.deleteAll(renqingRecordIds);
-      }
-      if (giftRecordIds.isNotEmpty) {
-        await IsarDb.instance.giftRecords.deleteAll(giftRecordIds);
-      }
-      await IsarDb.instance.persons.deleteAll(personIds);
-    });
-  }
-
-  static Future<List<Person>> _loadPersonsByIds(List<Id> ids) async {
-    final persons = <Person>[];
-
-    for (final id in ids.toSet()) {
-      final person = await IsarDb.instance.persons.get(id);
-      if (person != null) {
-        persons.add(person);
-      }
-    }
-
-    return persons;
-  }
-
-  static Future<List<Id>> _findRenqingRecordIdsByPersons(
-    List<Person> persons,
-  ) async {
-    // Existing renqing records are associated by contact name.
-    final names = persons
-        .map((person) => person.name.trim())
-        .where((name) => name.isNotEmpty)
-        .toSet();
-    final recordIds = <Id>{};
-
-    for (final name in names) {
-      final ids = await IsarDb.instance.renqingRecords
-          .filter()
-          .nameEqualTo(name)
-          .idProperty()
-          .findAll();
-      recordIds.addAll(ids);
-    }
-
-    return recordIds.toList(growable: false);
-  }
-
-  static Future<List<Id>> _findGiftRecordIdsByPersons(
-    List<Person> persons,
-  ) async {
+    final records = await RecordRepository.loadAll();
+    final gifts = await GiftRecordRepository.loadAll();
+    final names = persons.map((person) => person.name.trim()).toSet();
     final personIds = persons.map((person) => person.id).toSet();
-    final recordIds = <Id>{};
 
-    for (final personId in personIds) {
-      final ids = await IsarDb.instance.giftRecords
-          .filter()
-          .personIdEqualTo(personId)
-          .idProperty()
-          .findAll();
-      recordIds.addAll(ids);
+    await RecordRepository.deleteByIds(
+      records
+          .where((record) => names.contains(record.name.trim()))
+          .map((record) => record.id)
+          .toList(growable: false),
+    );
+    await GiftRecordRepository.deleteByIds(
+      gifts
+          .where((record) => personIds.contains(record.personId))
+          .map((record) => record.id)
+          .toList(growable: false),
+    );
+
+    for (final id in personIds) {
+      await ApiServices.client.delete("/api/renqing/persons/$id");
     }
+    _RepositoryRefresh.refreshAll();
+  }
 
-    return recordIds.toList(growable: false);
+  static Future<List<Person>> _loadPersonsByIds(List<int> ids) async {
+    final persons = <Person>[];
+    for (final id in ids.where((id) => id > 0).toSet()) {
+      persons.add(
+        await ApiServices.client.getObject(
+          "/api/renqing/persons/$id",
+          Person.fromJson,
+        ),
+      );
+    }
+    return persons;
   }
 }

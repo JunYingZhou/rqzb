@@ -2,10 +2,12 @@ import "package:flutter/material.dart";
 
 import "pages/add_record_page.dart";
 import "pages/contacts_page.dart";
+import "pages/login_page.dart";
 import "pages/profile_page.dart";
 import "pages/record_page.dart";
 
 class AppRoutes {
+  static const login = "/login";
   static const records = "/records";
   static const contacts = "/contacts";
   static const profile = "/profile";
@@ -13,6 +15,11 @@ class AppRoutes {
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case login:
+        return MaterialPageRoute(
+          settings: settings,
+          builder: (_) => const LoginPage(),
+        );
       case records:
         return MaterialPageRoute(
           settings: settings,
