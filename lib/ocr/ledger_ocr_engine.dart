@@ -1,9 +1,7 @@
 import "dart:io";
 
-import "android_ledger_ocr_engine.dart";
+import "http_ledger_ocr_engine.dart";
 import "ledger_page_parser.dart";
-import "mlkit_ledger_ocr_engine.dart";
-import "paddle_ledger_ocr_engine.dart";
 
 abstract class LedgerOcrEngine {
   Future<OcrLedgerParseResult> recognizeImage(
@@ -15,16 +13,7 @@ abstract class LedgerOcrEngine {
 }
 
 LedgerOcrEngine createLedgerOcrEngine() {
-  if (Platform.isAndroid) {
-    return AndroidLedgerOcrEngine(
-      primary: PaddleLedgerOcrEngine(),
-      fallback: MlKitLedgerOcrEngine(),
-    );
-  }
-  if (Platform.isIOS) {
-    return MlKitLedgerOcrEngine();
-  }
-  return const UnsupportedLedgerOcrEngine();
+  return HttpLedgerOcrEngine();
 }
 
 class UnsupportedLedgerOcrEngine implements LedgerOcrEngine {

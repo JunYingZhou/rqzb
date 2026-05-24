@@ -20,7 +20,7 @@ class HttpLedgerOcrEngine implements LedgerOcrEngine {
     required int pageIndex,
   }) async {
     final request = http.MultipartRequest("POST", Uri.parse(apiUrl));
-    request.files.add(await http.MultipartFile.fromPath("image", image.path));
+    request.files.add(await http.MultipartFile.fromPath("file", image.path));
 
     final streamedResponse = await request.send();
     final responseBody = await streamedResponse.stream.bytesToString();
@@ -34,6 +34,11 @@ class HttpLedgerOcrEngine implements LedgerOcrEngine {
     final decoded = jsonDecode(responseBody);
     if (decoded is! Map<String, dynamic>) {
       throw const FormatException("OCR 服务返回格式异常");
+    }
+
+    final backendResult = _parseBackendResult(decoded);
+    if (backendResult != null) {
+      return backendResult.toParseResult(pageIndex: pageIndex);
     }
 
     final chunks = _parseChunks(decoded);
@@ -50,7 +55,10 @@ class HttpLedgerOcrEngine implements LedgerOcrEngine {
   Future<void> close() async {}
 
   /// Extracts raw text from the response, falling back to joining chunk texts.
-  String _extractRawText(Map<String, dynamic> response, List<OcrTextChunk> chunks) {
+  String _extractRawText(
+    Map<String, dynamic> response,
+    List<OcrTextChunk> chunks,
+  ) {
     final data = response["data"];
     if (data is Map<String, dynamic>) {
       final rawText = data["raw_text"] ?? data["rawText"];
@@ -82,6 +90,50 @@ class HttpLedgerOcrEngine implements LedgerOcrEngine {
     }
 
     return [];
+  }
+
+  _BackendAnalyzeResult? _parseBackendResult(Map<String, dynamic> response) {
+    if (response["code"] is num && response["code"] != 200) {
+      final msg = response["message"]?.toString() ?? "未知错误";
+      throw StateError("OCR 服务返回错误: $msg");
+    }
+
+    final data = response["data"];
+    if (data is! Map<String, dynamic>) return null;
+
+    final resultText = data["result"];
+    if (resultText is! String || resultText.trim().isEmpty) return null;
+
+    final decodedResult = jsonDecode(resultText);
+    if (decodedResult is! Map<String, dynamic>) {
+      throw const FormatException("OCR 服务 result 字段格式异常");
+    }
+
+    final result = decodedResult["result"];
+    if (result is! Map<String, dynamic>) return null;
+
+    final records = result["records"];
+    if (records is! List) return null;
+
+    return _BackendAnalyzeResult(
+      filename: decodedResult["filename"]?.toString(),
+      scene: result["scene"]?.toString(),
+      calculatedTotal: _toInt(result["calculated_total"]),
+      backendCalculatedTotal: _toInt(result["backend_calculated_total"]),
+      detectedTotalText: result["detected_total_text"]?.toString(),
+      detectedTotalAmount: _toInt(result["detected_total_amount"]),
+      isTotalMatched: result["is_total_matched"] == true,
+      notes: result["notes"]?.toString(),
+      records: records
+          .map(_BackendAnalyzeRecord.tryParse)
+          .whereType<_BackendAnalyzeRecord>()
+          .toList(growable: false),
+      uncertainRecords: (result["uncertain_records"] is List)
+          ? (result["uncertain_records"] as List)
+              .map((item) => item.toString())
+              .toList(growable: false)
+          : const [],
+    );
   }
 
   /// Parses a single chunk from one of several supported JSON shapes.
@@ -156,5 +208,112 @@ class HttpLedgerOcrEngine implements LedgerOcrEngine {
     if (value == null) return 0;
     if (value is num) return value.toDouble();
     return double.tryParse(value.toString()) ?? 0;
+  }
+
+  static int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value.toString());
+  }
+}
+
+class _BackendAnalyzeResult {
+  const _BackendAnalyzeResult({
+    required this.records,
+    required this.uncertainRecords,
+    this.filename,
+    this.scene,
+    this.calculatedTotal,
+    this.backendCalculatedTotal,
+    this.detectedTotalText,
+    this.detectedTotalAmount,
+    this.isTotalMatched,
+    this.notes,
+  });
+
+  final String? filename;
+  final String? scene;
+  final int? calculatedTotal;
+  final int? backendCalculatedTotal;
+  final String? detectedTotalText;
+  final int? detectedTotalAmount;
+  final bool? isTotalMatched;
+  final String? notes;
+  final List<_BackendAnalyzeRecord> records;
+  final List<String> uncertainRecords;
+
+  OcrLedgerParseResult toParseResult({required int pageIndex}) {
+    final entries = records
+        .map(
+          (record) => OcrLedgerImportDraft(
+            name: record.name,
+            amount: record.amount,
+            sourceText: record.sourceText,
+            pageIndex: pageIndex,
+          ),
+        )
+        .toList(growable: false);
+
+    return OcrLedgerParseResult(
+      entries: entries,
+      unmatchedTexts: uncertainRecords,
+      rawText: _rawText(),
+      pageIndex: pageIndex,
+    );
+  }
+
+  String _rawText() {
+    final lines = <String>[
+      if (filename != null && filename!.trim().isNotEmpty) filename!.trim(),
+      if (scene != null && scene!.trim().isNotEmpty) scene!.trim(),
+      ...records.map((record) => record.sourceText),
+      if (calculatedTotal != null) "calculated_total: $calculatedTotal",
+      if (backendCalculatedTotal != null)
+        "backend_calculated_total: $backendCalculatedTotal",
+      if (detectedTotalText != null && detectedTotalText!.trim().isNotEmpty)
+        "detected_total_text: ${detectedTotalText!.trim()}",
+      if (detectedTotalAmount != null)
+        "detected_total_amount: $detectedTotalAmount",
+      if (isTotalMatched != null) "is_total_matched: $isTotalMatched",
+      if (notes != null && notes!.trim().isNotEmpty) notes!.trim(),
+    ];
+    return lines.join("\n");
+  }
+}
+
+class _BackendAnalyzeRecord {
+  const _BackendAnalyzeRecord({
+    required this.name,
+    required this.amount,
+    this.amountText,
+  });
+
+  final String name;
+  final int amount;
+  final String? amountText;
+
+  String get sourceText {
+    final parts = <String>[
+      name,
+      if (amountText != null && amountText!.trim().isNotEmpty)
+        amountText!.trim(),
+      amount.toString(),
+    ];
+    return parts.join(" ");
+  }
+
+  static _BackendAnalyzeRecord? tryParse(dynamic item) {
+    if (item is! Map<String, dynamic>) return null;
+
+    final name = item["name"]?.toString().trim();
+    final amount = HttpLedgerOcrEngine._toInt(item["amount"]);
+    if (name == null || name.isEmpty || amount == null) return null;
+
+    return _BackendAnalyzeRecord(
+      name: name,
+      amount: amount,
+      amountText: item["amount_text"]?.toString(),
+    );
   }
 }
